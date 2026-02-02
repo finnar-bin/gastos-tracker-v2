@@ -1,50 +1,60 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { db } from '@/lib/db'
-import { transactions } from '@/lib/db/schema'
-import { desc, eq, and, gte, lte } from 'drizzle-orm'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-import { ChevronLeft, CreditCard } from 'lucide-react'
-import { HistoryFilter } from './filter'
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { transactions } from "@/lib/db/schema";
+import { desc, eq, and, gte, lte } from "drizzle-orm";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { ChevronLeft, CreditCard } from "lucide-react";
+import { HistoryFilter } from "./filter";
 
-export default async function HistoryPage({ searchParams }: { searchParams: Promise<{ month?: string, year?: string }> }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export default async function HistoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string; year?: string }>;
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login')
+    redirect("/login");
   }
 
-  const { month, year } = await searchParams
-  
-  const currentYear = new Date().getFullYear()
-  const selectedYear = year ? parseInt(year) : currentYear
-  const selectedMonth = month ? parseInt(month) : new Date().getMonth()
+  const { month, year } = await searchParams;
+
+  const currentYear = new Date().getFullYear();
+  const selectedYear = year ? parseInt(year) : currentYear;
+  const selectedMonth = month ? parseInt(month) : new Date().getMonth();
 
   // Build query
-  const startDate = new Date(selectedYear, selectedMonth, 1)
-  const endDate = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59)
+  const startDate = new Date(selectedYear, selectedMonth, 1);
+  const endDate = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59);
 
   // Fetch transactions
-  const txs = await db.select().from(transactions)
-    .where(and(
+  const txs = await db
+    .select()
+    .from(transactions)
+    .where(
+      and(
         eq(transactions.userId, user.id),
         gte(transactions.date, startDate),
-        lte(transactions.date, endDate)
-    ))
-    .orderBy(desc(transactions.date))
+        lte(transactions.date, endDate),
+      ),
+    )
+    .orderBy(desc(transactions.date));
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 pb-20">
       <div className="flex items-center gap-2">
-         <Link href="/">
-            <Button variant="ghost" size="icon">
-                <ChevronLeft className="h-5 w-5" />
-            </Button>
-         </Link>
-         <h1 className="text-xl font-bold">History</h1>
+        <Link href="/">
+          <Button variant="ghost" size="icon">
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+        </Link>
+        <h1 className="text-xl font-bold">History</h1>
       </div>
 
       {/* Filters */}
@@ -53,30 +63,43 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
       {/* Transaction List */}
       <div className="space-y-3">
         {txs.length === 0 ? (
-            <p className="text-center text-muted-foreground py-12">No transactions found for this period.</p>
+          <p className="text-center text-muted-foreground py-12">
+            No transactions found for this period.
+          </p>
         ) : (
-            txs.map(tx => (
-                <Card key={tx.id} className="overflow-hidden shadow-sm">
-                    <CardContent className="p-4 flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                                tx.type === 'expense' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
-                            }`}>
-                                <CreditCard className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <p className="font-medium capitalize">{tx.description || tx.category}</p>
-                                <p className="text-xs text-muted-foreground">{new Date(tx.date).toLocaleDateString()}</p>
-                            </div>
-                        </div>
-                        <div className={`font-bold ${tx.type === 'expense' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                            {tx.type === 'expense' ? '-' : '+'}${parseFloat(tx.amount).toFixed(2)}
-                        </div>
-                    </CardContent>
-                </Card>
-            ))
+          txs.map((tx) => (
+            <Card key={tx.id} className="overflow-hidden shadow-sm">
+              <CardContent className="p-4 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                      tx.type === "expense"
+                        ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                        : "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+                    }`}
+                  >
+                    <CreditCard className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-medium capitalize">
+                      {tx.description || tx.category}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(tx.date).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div
+                  className={`font-bold ${tx.type === "expense" ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}
+                >
+                  {tx.type === "expense" ? "-" : "+"}$
+                  {parseFloat(tx.amount).toFixed(2)}
+                </div>
+              </CardContent>
+            </Card>
+          ))
         )}
       </div>
     </div>
-  )
+  );
 }
