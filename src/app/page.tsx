@@ -33,7 +33,7 @@ export default async function Dashboard() {
       </header>
 
       {/* Balance Card */}
-      <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-lg">
+      <Card className="bg-linear-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-lg">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium opacity-90 flex items-center gap-2">
             <Wallet className="h-4 w-4" /> Total Balance

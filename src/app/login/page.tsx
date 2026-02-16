@@ -1,4 +1,5 @@
-import { login, signup, loginWithGoogle } from "./actions";
+import Link from "next/link";
+import { login, loginWithGoogle } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,11 +39,11 @@ export default function LoginPage() {
               <Input id="password" name="password" type="password" required />
             </div>
             <div className="flex flex-col gap-3 pt-2">
-              <Button formAction={login} className="w-full">
+              <Button formAction={login} className="w-full cursor-pointer">
                 Log in
               </Button>
-              <Button formAction={signup} variant="outline" className="w-full">
-                Sign up
+              <Button asChild variant="outline" className="w-full">
+                <Link href="/signup">Sign up</Link>
               </Button>
             </div>
           </form>
@@ -59,7 +60,7 @@ export default function LoginPage() {
           <Button
             onClick={loginWithGoogle}
             variant="secondary"
-            className="w-full"
+            className="w-full cursor-pointer"
           >
             Google
           </Button>
