@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
-import { transactions } from "@/lib/db/schema";
+import { transactions, categories } from "@/lib/db/schema";
 import { desc, eq, and, gte, lte } from "drizzle-orm";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ChevronLeft, CreditCard } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { HistoryFilter } from "./filter";
 
 export default async function HistoryPage({
@@ -33,10 +33,19 @@ export default async function HistoryPage({
   const startDate = new Date(selectedYear, selectedMonth, 1);
   const endDate = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59);
 
-  // Fetch transactions
+  // Fetch transactions joined with categories
   const txs = await db
-    .select()
+    .select({
+      id: transactions.id,
+      amount: transactions.amount,
+      type: transactions.type,
+      description: transactions.description,
+      date: transactions.date,
+      categoryName: categories.name,
+      categoryIcon: categories.icon,
+    })
     .from(transactions)
+    .innerJoin(categories, eq(transactions.categoryId, categories.id))
     .where(
       and(
         eq(transactions.userId, user.id),
@@ -72,17 +81,17 @@ export default async function HistoryPage({
               <CardContent className="p-4 flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                    className={`h-10 w-10 rounded-full flex items-center justify-center text-xl ${
                       tx.type === "expense"
                         ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
                         : "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
                     }`}
                   >
-                    <CreditCard className="h-5 w-5" />
+                    {tx.categoryIcon}
                   </div>
                   <div>
                     <p className="font-medium capitalize">
-                      {tx.description || tx.category}
+                      {tx.description || tx.categoryName}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {new Date(tx.date).toLocaleDateString()}
