@@ -5,6 +5,7 @@ import {
   uuid,
   decimal,
   varchar,
+  date,
 } from "drizzle-orm/pg-core";
 
 export const sheets = pgTable("sheets", {
@@ -51,6 +52,6 @@ export const transactions = pgTable("transactions", {
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   type: varchar("type", { length: 20 }).notNull(), // 'income' | 'expense'
   description: text("description"),
-  date: timestamp("date").notNull().defaultNow(),
+  date: date("date").notNull().defaultNow(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
