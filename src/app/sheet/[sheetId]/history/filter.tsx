@@ -27,18 +27,20 @@ const MONTHS = [
 export function HistoryFilter({
   month,
   year,
+  sheetId,
 }: {
   month: number;
   year: number;
+  sheetId: string;
 }) {
   const router = useRouter();
 
   const handleMonthChange = (val: string) => {
-    router.push(`/history?month=${val}&year=${year}`);
+    router.push(`/sheet/${sheetId}/history?month=${val}&year=${year}`);
   };
 
   const handleYearChange = (val: string) => {
-    router.push(`/history?month=${month}&year=${val}`);
+    router.push(`/sheet/${sheetId}/history?month=${month}&year=${val}`);
   };
 
   const years = Array.from(

@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireSheetAccess } from "@/lib/auth/sheets";
 import { addTransaction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,60 +11,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import Link from "next/link";
 import { db } from "@/lib/db";
-import { sheets, categories, sheetUsers } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { categories } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export default async function AddTransactionPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ sheetId: string }>;
   searchParams: Promise<{ type?: string }>;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const { sheetId } = await params;
+  const { sheet } = await requireSheetAccess(sheetId);
+  const selectedSheetId = sheet.id;
 
   const { type: queryType } = await searchParams;
   const type = queryType || "expense";
   const isExpense = type === "expense";
 
-  // 1. Get user sheets
-  const userSheets = await db
-    .select({ id: sheets.id, name: sheets.name })
-    .from(sheets)
-    .innerJoin(sheetUsers, eq(sheets.id, sheetUsers.sheetId))
-    .where(eq(sheetUsers.userId, user.id));
-
-  // 2. If no sheets, show a message
-  if (userSheets.length === 0) {
-    return (
-      <div className="container max-w-md mx-auto p-4 flex items-center justify-center min-h-[80vh]">
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>No Sheets Found</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground">
-              You haven't been granted access to any sheets yet. Please create
-              one or ask for access.
-            </p>
-            <Button className="w-full" asChild>
-              <a href="/">Back to Dashboard</a>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const selectedSheetId = userSheets[0].id;
-
-  // 3. Get categories for the sheet
+  // 1. Get categories for the sheet
   const availableCategories = await db
     .select()
     .from(categories)
@@ -89,7 +55,7 @@ export default async function AddTransactionPage({
                 first.
               </p>
               <Button variant="outline" className="w-full" asChild>
-                <a href="/">Back to Dashboard</a>
+                <Link href={`/sheet/${selectedSheetId}`}>Cancel</Link>
               </Button>
             </div>
           ) : (
@@ -152,7 +118,7 @@ export default async function AddTransactionPage({
                   Save
                 </Button>
                 <Button variant="outline" className="w-full" asChild>
-                  <a href="/">Cancel</a>
+                  <Link href={`/sheet/${selectedSheetId}`}>Cancel</Link>
                 </Button>
               </div>
             </form>

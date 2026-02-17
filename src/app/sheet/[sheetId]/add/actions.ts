@@ -33,5 +33,5 @@ export async function addTransaction(formData: FormData) {
     date,
   });
 
-  redirect("/");
+  redirect(`/sheet/${sheetId}`);
 }

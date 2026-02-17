@@ -70,7 +70,7 @@ export default async function SheetSelectorPage() {
           </Card>
         ) : (
           userSheets.map((sheet) => (
-            <Link key={sheet.id} href={`/?sheetId=${sheet.id}`}>
+            <Link key={sheet.id} href={`/sheet/${sheet.id}`}>
               <Card className="hover:border-primary transition-colors cursor-pointer group">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4">
                   <div className="space-y-1">

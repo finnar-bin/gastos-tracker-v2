@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireSheetAccess } from "@/lib/auth/sheets";
 import { db } from "@/lib/db";
 import { transactions, categories } from "@/lib/db/schema";
 import { desc, eq, and, gte, lte } from "drizzle-orm";
@@ -10,19 +9,14 @@ import { ChevronLeft } from "lucide-react";
 import { HistoryFilter } from "./filter";
 
 export default async function HistoryPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ sheetId: string }>;
   searchParams: Promise<{ month?: string; year?: string }>;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
+  const { sheetId } = await params;
+  const { user } = await requireSheetAccess(sheetId);
   const { month, year } = await searchParams;
 
   const currentYear = new Date().getFullYear();
@@ -49,6 +43,7 @@ export default async function HistoryPage({
     .where(
       and(
         eq(transactions.userId, user.id),
+        eq(transactions.sheetId, sheetId),
         gte(transactions.date, startDate),
         lte(transactions.date, endDate),
       ),
@@ -58,7 +53,7 @@ export default async function HistoryPage({
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 pb-20">
       <div className="flex items-center gap-2">
-        <Link href="/">
+        <Link href={`/sheet/${sheetId}`}>
           <Button variant="ghost" size="icon">
             <ChevronLeft className="h-5 w-5" />
           </Button>
@@ -67,7 +62,11 @@ export default async function HistoryPage({
       </div>
 
       {/* Filters */}
-      <HistoryFilter month={selectedMonth} year={selectedYear} />
+      <HistoryFilter
+        month={selectedMonth}
+        year={selectedYear}
+        sheetId={sheetId}
+      />
 
       {/* Transaction List */}
       <div className="space-y-3">
