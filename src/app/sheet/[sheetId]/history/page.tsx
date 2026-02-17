@@ -44,8 +44,8 @@ export default async function HistoryPage({
       and(
         eq(transactions.userId, user.id),
         eq(transactions.sheetId, sheetId),
-        gte(transactions.date, startDate),
-        lte(transactions.date, endDate),
+        gte(transactions.date, startDate.toISOString().split("T")[0]),
+        lte(transactions.date, endDate.toISOString().split("T")[0]),
       ),
     )
     .orderBy(desc(transactions.date));
