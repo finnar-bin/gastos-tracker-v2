@@ -46,6 +46,11 @@ export default async function SheetSelectorPage() {
             Select a sheet to manage
           </p>
         </div>
+        <form action="/auth/signout" method="post">
+          <Button variant="ghost" size="sm">
+            Sign Out
+          </Button>
+        </form>
       </header>
 
       <div className="flex flex-col gap-4">
