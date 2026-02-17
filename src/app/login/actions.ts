@@ -20,7 +20,7 @@ export async function login(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect("/sheet");
 }
 
 export async function loginWithGoogle() {

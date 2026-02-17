@@ -53,5 +53,5 @@ export async function signup(previousState: unknown, formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect("/sheet");
 }
