@@ -48,7 +48,7 @@ export default async function SheetSelectorPage() {
         </div>
       </header>
 
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         {userSheets.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="p-8 text-center flex flex-col items-center gap-3">
