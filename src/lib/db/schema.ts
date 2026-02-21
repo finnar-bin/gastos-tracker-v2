@@ -43,22 +43,44 @@ export const categories = pgTable("categories", {
     .notNull()
     .references(() => sheets.id, { onDelete: "cascade" }),
   type: transactionTypeEnum("type").notNull(),
+  budget: decimal("budget", { precision: 10, scale: 2 }),
+  defaultAmount: decimal("default_amount", {
+    precision: 10,
+    scale: 2,
+  }),
+  dueDate: date("due_date"),
+  createdBy: uuid("created_by").notNull(), // Links to auth.users
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const paymentTypes = pgTable("payment_types", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  icon: text("icon").notNull(),
+  sheetId: uuid("sheet_id")
+    .notNull()
+    .references(() => sheets.id, { onDelete: "cascade" }),
   createdBy: uuid("created_by").notNull(), // Links to auth.users
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const transactions = pgTable("transactions", {
   id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id").notNull(), // Links to auth.users
   sheetId: uuid("sheet_id").references(() => sheets.id, {
     onDelete: "cascade",
   }),
   categoryId: uuid("category_id")
     .notNull()
     .references(() => categories.id, { onDelete: "cascade" }),
+  paymentType: uuid("payment_type_id")
+    .notNull()
+    .references(() => paymentTypes.id, {
+      onDelete: "set null",
+    }),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   type: transactionTypeEnum("type").notNull(),
   description: text("description"),
   date: date("date").notNull().defaultNow(),
+  createdBy: uuid("created_by").notNull(), // Links to auth.users
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

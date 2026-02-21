@@ -13,8 +13,9 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { categories } from "@/lib/db/schema";
+import { categories, paymentTypes } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import * as LucideIcons from "lucide-react";
 
 export default async function AddTransactionPage({
   params,
@@ -36,6 +37,11 @@ export default async function AddTransactionPage({
     .select()
     .from(categories)
     .where(eq(categories.sheetId, selectedSheetId));
+
+  const availablePaymentTypes = await db
+    .select()
+    .from(paymentTypes)
+    .where(eq(paymentTypes.sheetId, selectedSheetId));
 
   const filteredCategories = availableCategories.filter(
     (cat) => cat.type === type,
@@ -89,6 +95,28 @@ export default async function AddTransactionPage({
                         {cat.name}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="paymentType">Payment Type</Label>
+                <Select name="paymentType" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availablePaymentTypes.map((pt) => {
+                      const Icon = (LucideIcons as any)[pt.icon];
+                      return (
+                        <SelectItem key={pt.id} value={pt.id}>
+                          <div className="flex items-center gap-2">
+                            {Icon && <Icon className="w-4 h-4" />}
+                            <span>{pt.name}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>

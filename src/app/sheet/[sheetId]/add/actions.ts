@@ -20,13 +20,19 @@ export async function addTransaction(formData: FormData) {
   const categoryId = formData.get("categoryId") as string;
   const sheetId = formData.get("sheetId") as string;
   const description = formData.get("description") as string;
+  const paymentType = formData.get("paymentType") as string;
   const dateStr = formData.get("date") as string;
   const date = dateStr || new Date().toISOString().split("T")[0];
 
+  if (!paymentType) {
+    throw new Error("Payment type is required");
+  }
+
   await db.insert(transactions).values({
-    userId: user.id,
+    createdBy: user.id,
     sheetId,
     categoryId,
+    paymentType,
     amount: amount.toString(), // Store as string for decimal
     type,
     description,

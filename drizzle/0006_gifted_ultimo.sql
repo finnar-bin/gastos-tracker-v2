@@ -1,0 +1,1 @@
+ALTER TABLE "transactions" ALTER COLUMN "payment_type_id" SET NOT NULL;

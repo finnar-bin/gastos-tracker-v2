@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
-import { sheets, sheetUsers } from "@/lib/db/schema";
+import { sheets, sheetUsers, paymentTypes } from "@/lib/db/schema";
 
 export async function createSheet(formData: FormData) {
   const supabase = await createClient();
@@ -38,6 +38,21 @@ export async function createSheet(formData: FormData) {
       userId: user.id,
       role: "admin",
     });
+
+    await db.insert(paymentTypes).values([
+      {
+        name: "Cash",
+        icon: "Coins",
+        sheetId: newSheet.id,
+        createdBy: user.id,
+      },
+      {
+        name: "Credit Card",
+        icon: "CreditCard",
+        sheetId: newSheet.id,
+        createdBy: user.id,
+      },
+    ]);
 
     revalidatePath("/sheet");
     return { success: true };
