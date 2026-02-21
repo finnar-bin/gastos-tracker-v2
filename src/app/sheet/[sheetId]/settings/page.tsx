@@ -1,5 +1,5 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
-import { Settings } from "lucide-react";
+import { Settings, PlusCircle, Key } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -24,7 +24,37 @@ export default async function SettingsPage({
           <p className="text-sm text-muted-foreground">{sheet.name}</p>
         </div>
       </div>
-      <div className="text-center text-muted-foreground p-8">Coming soon!</div>
+      <div className="space-y-8">
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold border-b pb-2">
+            Sheet Settings
+          </h2>
+          <div className="flex flex-col space-y-3">
+            <Link
+              href={`/sheet/${sheetId}/settings/category`}
+              className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
+            >
+              <PlusCircle className="h-5 w-5 text-muted-foreground" />
+              Add Category
+            </Link>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold border-b pb-2">
+            Profile Settings
+          </h2>
+          <div className="flex flex-col space-y-3">
+            <Link
+              href="/settings/password"
+              className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
+            >
+              <Key className="h-5 w-5 text-muted-foreground" />
+              Update Password
+            </Link>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
