@@ -13,7 +13,7 @@ export default async function SheetDashboardPage({
   const { sheet } = await requireSheetAccess(sheetId);
 
   return (
-    <div className="container max-w-md mx-auto p-4 space-y-6 pb-20">
+    <div className="container max-w-md mx-auto p-4 space-y-6">
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">{sheet.name}</h1>

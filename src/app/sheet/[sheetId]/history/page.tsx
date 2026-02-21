@@ -51,7 +51,7 @@ export default async function HistoryPage({
     .orderBy(desc(transactions.date));
 
   return (
-    <div className="container max-w-md mx-auto p-4 space-y-6 pb-20">
+    <div className="container max-w-md mx-auto p-4 space-y-6 min-h-screen relative">
       <div className="flex items-center gap-2">
         <Link href={`/sheet/${sheetId}`}>
           <Button variant="ghost" size="icon">
