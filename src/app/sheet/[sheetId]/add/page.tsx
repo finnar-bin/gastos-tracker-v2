@@ -55,11 +55,16 @@ export default async function AddTransactionPage({
         </CardHeader>
         <CardContent>
           {filteredCategories.length === 0 ? (
-            <div className="space-y-4 py-4 text-center">
+            <div className="space-y-4 py-6 text-center">
               <p className="text-muted-foreground">
-                No categories found for this sheet. Please add some categories
-                first.
+                No categories found for this sheet (type: {type}). Please add
+                some categories first.
               </p>
+              <Button asChild className="w-full">
+                <Link href={`/sheet/${selectedSheetId}/settings/category`}>
+                  Create Category
+                </Link>
+              </Button>
               <Button variant="outline" className="w-full" asChild>
                 <Link href={`/sheet/${selectedSheetId}`}>Cancel</Link>
               </Button>

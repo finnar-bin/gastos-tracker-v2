@@ -1,5 +1,5 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
-import { Settings, PlusCircle, Key } from "lucide-react";
+import { Settings, PlusCircle, Key, Repeat } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -36,6 +36,13 @@ export default async function SettingsPage({
             >
               <PlusCircle className="h-5 w-5 text-muted-foreground" />
               Add Category
+            </Link>
+            <Link
+              href={`/sheet/${sheetId}/settings/recurring`}
+              className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
+            >
+              <Repeat className="h-5 w-5 text-muted-foreground" />
+              Recurring Transactions
             </Link>
           </div>
         </section>

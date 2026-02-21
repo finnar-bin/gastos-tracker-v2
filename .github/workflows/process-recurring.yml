@@ -1,0 +1,25 @@
+name: Process Recurring Transactions
+
+on:
+  schedule:
+    # Runs at 00:00 UTC (Midnight) every day.
+    - cron: "0 0 * * *"
+  # Allows you to trigger the workflow manually from the GitHub Actions UI
+  workflow_dispatch:
+
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit API Route
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          # TODO: update this URL to the actual production domain
+          API_URL: https://gastos.example.com/api/cron/process-recurring
+        run: |
+          echo "Triggering API route: $API_URL"
+
+          # Using curl to trigger the API route and fail if the HTTP status is not 2xx
+          curl -f -i \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -X GET "$API_URL"
