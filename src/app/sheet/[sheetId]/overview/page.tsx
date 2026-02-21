@@ -20,7 +20,7 @@ export default async function YearOverviewPage({
           </Button>
         </Link>
         <div>
-          <h1 className="text-xl font-bold">Year Overview</h1>
+          <h1 className="text-xl font-bold">Overview</h1>
           <p className="text-sm text-muted-foreground">{sheet.name}</p>
         </div>
       </div>

@@ -19,8 +19,8 @@ export function BottomBar({ sheetId }: BottomBarProps) {
       icon: Home,
     },
     {
-      name: "Year Review",
-      href: `/sheet/${sheetId}/year-overview`,
+      name: "Overview",
+      href: `/sheet/${sheetId}/overview`,
       icon: Calendar,
     },
     {
