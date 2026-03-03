@@ -67,39 +67,41 @@ export default async function CategorySettingsPage({
           categoryList.map((cat) => {
             const Icon = (LucideIcons as any)[cat.icon] || LayoutGrid;
             return (
-              <Card
+              <Link
                 key={cat.id}
-                className="overflow-hidden border-none shadow-sm bg-card hover:bg-accent/5 transition-colors"
+                href={`/sheet/${sheetId}/settings/category/${cat.id}/edit`}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <div className="font-semibold">{cat.name}</div>
-                        <div className="text-xs text-muted-foreground capitalize">
-                          {cat.type}
+                <Card className="overflow-hidden border-none shadow-sm bg-card hover:bg-accent/5 transition-colors cursor-pointer">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="font-semibold">{cat.name}</div>
+                          <div className="text-xs text-muted-foreground capitalize">
+                            {cat.type}
+                          </div>
                         </div>
                       </div>
+                      <div className="text-right">
+                        {cat.budget && (
+                          <div className="text-sm font-medium text-primary">
+                            ${cat.budget} budget
+                          </div>
+                        )}
+                        {cat.dueDate && (
+                          <div className="text-[10px] text-muted-foreground flex items-center justify-end gap-1">
+                            <Calendar className="h-3 w-3" />
+                            Due: {new Date(cat.dueDate).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      {cat.budget && (
-                        <div className="text-sm font-medium text-primary">
-                          ${cat.budget} budget
-                        </div>
-                      )}
-                      {cat.dueDate && (
-                        <div className="text-[10px] text-muted-foreground flex items-center justify-end gap-1">
-                          <Calendar className="h-3 w-3" />
-                          Due: {new Date(cat.dueDate).toLocaleDateString()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })
         )}

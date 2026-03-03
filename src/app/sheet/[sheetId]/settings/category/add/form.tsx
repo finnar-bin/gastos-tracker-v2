@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { addCategory } from "./actions";
+import { updateCategory, deleteCategory } from "../[categoryId]/edit/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,12 +19,23 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { LayoutGrid, Info, Loader2, SmilePlus } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 
-const AVAILABLE_ICONS = [
+export const AVAILABLE_ICONS = [
   // Food & Drinks
   "Utensils",
   "Coffee",
@@ -86,13 +98,35 @@ const AVAILABLE_ICONS = [
   "Wrench",
 ];
 
-export default function CategoryForm({ sheetId }: { sheetId: string }) {
-  const [selectedIcon, setSelectedIcon] = useState("");
+export type CategoryFormData = {
+  id: string;
+  name: string;
+  icon: string;
+  type: "income" | "expense";
+  budget: string | null;
+  defaultAmount: string | null;
+  dueDate: string | null;
+};
+
+type CategoryFormProps = {
+  sheetId: string;
+  mode?: "add" | "edit";
+  initialData?: CategoryFormData;
+};
+
+export default function CategoryForm({
+  sheetId,
+  mode = "add",
+  initialData,
+}: CategoryFormProps) {
+  const [selectedIcon, setSelectedIcon] = useState(initialData?.icon ?? "");
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
 
   const SelectedIconComponent = selectedIcon
     ? (LucideIcons as any)[selectedIcon]
     : null;
+
+  const formAction = mode === "edit" ? updateCategory : addCategory;
 
   return (
     <Card>
@@ -102,9 +136,12 @@ export default function CategoryForm({ sheetId }: { sheetId: string }) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form action={addCategory} className="space-y-4">
+        <form action={formAction} className="space-y-4">
           <input type="hidden" name="sheetId" value={sheetId} />
           <input type="hidden" name="icon" value={selectedIcon} />
+          {mode === "edit" && initialData && (
+            <input type="hidden" name="categoryId" value={initialData.id} />
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
@@ -112,6 +149,7 @@ export default function CategoryForm({ sheetId }: { sheetId: string }) {
               id="name"
               name="name"
               placeholder="e.g. Food & Drinks"
+              defaultValue={initialData?.name ?? ""}
               required
             />
           </div>
@@ -178,7 +216,7 @@ export default function CategoryForm({ sheetId }: { sheetId: string }) {
 
           <div className="space-y-2">
             <Label htmlFor="type">Type</Label>
-            <Select name="type" defaultValue="expense">
+            <Select name="type" defaultValue={initialData?.type ?? "expense"}>
               <SelectTrigger>
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
@@ -197,6 +235,7 @@ export default function CategoryForm({ sheetId }: { sheetId: string }) {
               type="number"
               step="0.01"
               placeholder="0.00"
+              defaultValue={initialData?.budget ?? ""}
             />
           </div>
 
@@ -208,12 +247,18 @@ export default function CategoryForm({ sheetId }: { sheetId: string }) {
               type="number"
               step="0.01"
               placeholder="0.00"
+              defaultValue={initialData?.defaultAmount ?? ""}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="dueDate">Due Date (Optional)</Label>
-            <Input id="dueDate" name="dueDate" type="date" />
+            <Input
+              id="dueDate"
+              name="dueDate"
+              type="date"
+              defaultValue={initialData?.dueDate ?? ""}
+            />
             <div className="flex items-start gap-2 mt-1 text-[10px] text-muted-foreground">
               <Info className="h-3 w-3 mt-0.5" />
               <p>
@@ -224,30 +269,93 @@ export default function CategoryForm({ sheetId }: { sheetId: string }) {
           </div>
 
           <div className="pt-4 space-y-2">
-            <SubmitButton disabled={!selectedIcon} />
+            <SubmitButton disabled={!selectedIcon} mode={mode} />
             <Button variant="outline" className="w-full" asChild>
               <Link href={`/sheet/${sheetId}/settings/category`}>Cancel</Link>
             </Button>
           </div>
         </form>
+
+        {mode === "edit" && initialData && (
+          <div className="mt-8 pt-8 border-t">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full">
+                  Delete Category
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete
+                    the category and all associated data.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <form action={deleteCategory} className="mt-2 sm:mt-0">
+                    <input type="hidden" name="sheetId" value={sheetId} />
+                    <input
+                      type="hidden"
+                      name="categoryId"
+                      value={initialData.id}
+                    />
+                    <DeleteButton />
+                  </form>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-function SubmitButton({ disabled }: { disabled: boolean }) {
+function SubmitButton({
+  disabled,
+  mode,
+}: {
+  disabled: boolean;
+  mode: "add" | "edit";
+}) {
   const { pending } = useFormStatus();
+
+  let content;
+  if (pending) {
+    content = (
+      <>
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        {mode === "edit" ? "Saving..." : "Creating..."}
+      </>
+    );
+  } else {
+    content = mode === "edit" ? "Save Changes" : "Create Category";
+  }
 
   return (
     <Button type="submit" className="w-full" disabled={disabled || pending}>
-      {pending ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Creating...
-        </>
-      ) : (
-        "Create Category"
-      )}
+      {content}
     </Button>
+  );
+}
+
+function DeleteButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <AlertDialogAction asChild variant="destructive" disabled={pending}>
+      <button type="submit">
+        {pending ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Deleting...
+          </>
+        ) : (
+          "Confirm Delete"
+        )}
+      </button>
+    </AlertDialogAction>
   );
 }
