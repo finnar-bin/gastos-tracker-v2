@@ -13,28 +13,86 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { LayoutGrid, Info, Loader2 } from "lucide-react";
+import { LayoutGrid, Info, Loader2, SmilePlus } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 
 const AVAILABLE_ICONS = [
+  // Food & Drinks
   "Utensils",
-  "Car",
-  "Home",
-  "ShoppingBag",
-  "Zap",
-  "Heart",
-  "Smartphone",
-  "Plane",
-  "Gift",
   "Coffee",
+  "Wine",
+  "ShoppingCart",
+  // Transport
+  "Car",
+  "Fuel",
+  "Bus",
+  "Plane",
+  "TrainFront",
+  // Housing & Utilities
+  "Home",
+  "Zap",
+  "Droplets",
+  "Wifi",
+  "Flame",
+  // Shopping & Lifestyle
+  "ShoppingBag",
+  "Shirt",
+  "Scissors",
+  "Gift",
+  "Gem",
+  // Health & Wellness
+  "Heart",
+  "Stethoscope",
+  "Dumbbell",
+  "Pill",
+  // Entertainment & Leisure
   "Music",
+  "Gamepad2",
+  "Tv",
+  "Film",
+  "PartyPopper",
+  // Education & Work
   "Book",
+  "GraduationCap",
+  "Briefcase",
+  "Laptop",
+  // Finance & Savings
+  "Wallet",
+  "PiggyBank",
+  "TrendingUp",
+  "Landmark",
+  // Tech & Communication
+  "Smartphone",
+  "CreditCard",
+  // Income Streams
+  "Banknote",
+  "HandCoins",
+  "CircleDollarSign",
+  "Pen",
+  "ChartLine",
+  "Building2",
+  "Store",
+  "Handshake",
+  // Other
+  "Baby",
+  "PawPrint",
+  "Wrench",
 ];
 
 export default function CategoryForm({ sheetId }: { sheetId: string }) {
   const [selectedIcon, setSelectedIcon] = useState("");
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
+
+  const SelectedIconComponent = selectedIcon
+    ? (LucideIcons as any)[selectedIcon]
+    : null;
 
   return (
     <Card>
@@ -60,25 +118,57 @@ export default function CategoryForm({ sheetId }: { sheetId: string }) {
 
           <div className="space-y-2">
             <Label>Icon</Label>
-            <div className="grid grid-cols-6 gap-2 p-2 border rounded-md">
-              {AVAILABLE_ICONS.map((iconName) => {
-                const Icon = (LucideIcons as any)[iconName];
-                return (
-                  <button
-                    key={iconName}
-                    type="button"
-                    onClick={() => setSelectedIcon(iconName)}
-                    className={`p-2 flex items-center justify-center rounded-md hover:bg-accent transition-colors ${
-                      selectedIcon === iconName
-                        ? "bg-primary/20 ring-2 ring-primary"
-                        : ""
-                    }`}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </button>
-                );
-              })}
-            </div>
+            <Popover open={iconPickerOpen} onOpenChange={setIconPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-start gap-2"
+                >
+                  {SelectedIconComponent ? (
+                    <>
+                      <SelectedIconComponent className="h-4 w-4" />
+                      <span>{selectedIcon}</span>
+                    </>
+                  ) : (
+                    <>
+                      <SmilePlus className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">
+                        Select an icon
+                      </span>
+                    </>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-70 p-2" align="start">
+                <div
+                  className="grid grid-cols-6 gap-1 overflow-y-auto"
+                  style={{ maxHeight: "calc(5 * 40px)" }}
+                >
+                  {AVAILABLE_ICONS.map((iconName) => {
+                    const Icon = (LucideIcons as any)[iconName];
+                    return (
+                      <button
+                        key={iconName}
+                        type="button"
+                        onClick={() => {
+                          setSelectedIcon(iconName);
+                          setIconPickerOpen(false);
+                        }}
+                        className={`p-2 flex items-center justify-center rounded-md hover:bg-accent transition-colors ${
+                          selectedIcon === iconName
+                            ? "bg-primary/20 ring-2 ring-primary"
+                            : ""
+                        }`}
+                        title={iconName}
+                      >
+                        <Icon className="h-5 w-5" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
             {!selectedIcon && (
               <p className="text-[10px] text-destructive font-medium">
                 Please select an icon for the category.
