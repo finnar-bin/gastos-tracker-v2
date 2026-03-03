@@ -103,12 +103,17 @@ export default function RecurringTransactionForm({
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      <span className="mr-2">{cat.icon}</span>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
+                  {categories.map((cat) => {
+                    const Icon = (LucideIcons as any)[cat.icon];
+                    return (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        <div className="flex items-center gap-2">
+                          {Icon && <Icon className="w-4 h-4" />}
+                          <span>{cat.name}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>

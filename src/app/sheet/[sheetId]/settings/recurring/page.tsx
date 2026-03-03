@@ -13,7 +13,9 @@ import {
   Calendar,
   CreditCard,
   Trash2,
+  LayoutGrid,
 } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -87,49 +89,53 @@ export default async function RecurringTransactionsPage({
             </Link>
           </div>
         ) : (
-          recurringList.map((rt) => (
-            <Card
-              key={rt.id}
-              className="overflow-hidden border-none shadow-sm bg-card hover:bg-accent/5 transition-colors"
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-xl">
-                      {rt.categoryIcon || "💰"}
-                    </div>
-                    <div>
-                      <div className="font-semibold flex items-center gap-2">
-                        {rt.description || rt.categoryName}
-                        {!rt.isActive && (
-                          <span className="text-[10px] px-1.5 py-0.5 border rounded-md font-medium text-muted-foreground">
-                            Paused
-                          </span>
-                        )}
+          recurringList.map((rt) => {
+            const Icon =
+              (LucideIcons as any)[rt.categoryIcon || ""] || LayoutGrid;
+            return (
+              <Card
+                key={rt.id}
+                className="overflow-hidden border-none shadow-sm bg-card hover:bg-accent/5 transition-colors"
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Icon className="h-5 w-5 text-primary" />
                       </div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        Next:{" "}
-                        {new Date(rt.nextProcessDate).toLocaleDateString()} (
-                        {rt.frequency})
+                      <div>
+                        <div className="font-semibold flex items-center gap-2">
+                          {rt.description || rt.categoryName}
+                          {!rt.isActive && (
+                            <span className="text-[10px] px-1.5 py-0.5 border rounded-md font-medium text-muted-foreground">
+                              Paused
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          Next:{" "}
+                          {new Date(rt.nextProcessDate).toLocaleDateString()} (
+                          {rt.frequency})
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div
+                        className={`font-bold ${rt.type === "income" ? "text-green-600" : "text-primary"}`}
+                      >
+                        {rt.type === "income" ? "+" : "-"}${rt.amount}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground flex items-center justify-end gap-1">
+                        <CreditCard className="h-3 w-3" />
+                        {rt.paymentTypeName || "Default"}
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div
-                      className={`font-bold ${rt.type === "income" ? "text-green-600" : "text-primary"}`}
-                    >
-                      {rt.type === "income" ? "+" : "-"}${rt.amount}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground flex items-center justify-end gap-1">
-                      <CreditCard className="h-3 w-3" />
-                      {rt.paymentTypeName || "Default"}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </div>
     </div>
