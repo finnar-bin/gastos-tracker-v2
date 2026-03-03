@@ -251,7 +251,8 @@ export default function CategoryForm({
             />
           </div>
 
-          <div className="space-y-2">
+          {/* TODO: Figure out a better way to notify the users, since this could be recurring */}
+          {/* <div className="space-y-2">
             <Label htmlFor="dueDate">Due Date (Optional)</Label>
             <Input
               id="dueDate"
@@ -266,7 +267,7 @@ export default function CategoryForm({
                 receive a notification every day 3 days before the set due date.
               </p>
             </div>
-          </div>
+          </div> */}
 
           <div className="pt-4 space-y-2">
             <SubmitButton disabled={!selectedIcon} mode={mode} />
