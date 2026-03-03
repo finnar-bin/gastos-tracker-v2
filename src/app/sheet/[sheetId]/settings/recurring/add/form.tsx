@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { addRecurringTransaction } from "./actions";
+import { addRecurringTransaction } from "../add/actions";
+import {
+  updateRecurringTransaction,
+  deleteRecurringTransaction,
+} from "../[recurringId]/edit/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,8 +18,20 @@ import {
 } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { Repeat } from "lucide-react";
+import { Repeat, Loader2 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useFormStatus } from "react-dom";
 
 interface Category {
   id: string;
@@ -29,26 +45,49 @@ interface PaymentType {
   icon: string;
 }
 
+export interface RecurringTransactionData {
+  id: string;
+  amount: string;
+  type: "income" | "expense";
+  description: string | null;
+  frequency: string;
+  dayOfMonth: string | null;
+  categoryId: string;
+  paymentType: string;
+}
+
 export default function RecurringTransactionForm({
   sheetId,
   categories,
   paymentTypes,
+  mode = "add",
+  initialData,
 }: {
   sheetId: string;
   categories: Category[];
   paymentTypes: PaymentType[];
+  mode?: "add" | "edit";
+  initialData?: RecurringTransactionData;
 }) {
-  const [frequency, setFrequency] = useState<string>("monthly");
-  const [dayOfMonth, setDayOfMonth] = useState<string>("");
+  const [frequency, setFrequency] = useState<string>(
+    initialData?.frequency ?? "monthly",
+  );
+  const [dayOfMonth, setDayOfMonth] = useState<string>(
+    initialData?.dayOfMonth ?? "",
+  );
 
   const isInvalidDay =
     frequency === "monthly" && dayOfMonth !== "" && parseInt(dayOfMonth) > 31;
+
+  const formAction =
+    mode === "edit" ? updateRecurringTransaction : addRecurringTransaction;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <Repeat className="h-4 w-4" /> Transaction Template
+          <Repeat className="h-4 w-4" /> {mode === "edit" ? "Edit" : "New"}{" "}
+          Template
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -68,12 +107,15 @@ export default function RecurringTransactionForm({
             </Button>
           </div>
         ) : (
-          <form action={addRecurringTransaction} className="space-y-4">
+          <form action={formAction} className="space-y-4">
             <input type="hidden" name="sheetId" value={sheetId} />
+            {mode === "edit" && initialData && (
+              <input type="hidden" name="recurringId" value={initialData.id} />
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="type">Type</Label>
-              <Select name="type" defaultValue="expense">
+              <Select name="type" defaultValue={initialData?.type ?? "expense"}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -92,13 +134,18 @@ export default function RecurringTransactionForm({
                 type="number"
                 step="0.01"
                 placeholder="0.00"
+                defaultValue={initialData?.amount}
                 required
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="categoryId">Category</Label>
-              <Select name="categoryId" required>
+              <Select
+                name="categoryId"
+                defaultValue={initialData?.categoryId}
+                required
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -120,7 +167,11 @@ export default function RecurringTransactionForm({
 
             <div className="space-y-2">
               <Label htmlFor="paymentType">Payment Type</Label>
-              <Select name="paymentType" required>
+              <Select
+                name="paymentType"
+                defaultValue={initialData?.paymentType}
+                required
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select payment type" />
                 </SelectTrigger>
@@ -144,7 +195,7 @@ export default function RecurringTransactionForm({
               <Label htmlFor="frequency">Frequency</Label>
               <Select
                 name="frequency"
-                defaultValue="monthly"
+                defaultValue={initialData?.frequency ?? "monthly"}
                 onValueChange={(val) => setFrequency(val)}
               >
                 <SelectTrigger>
@@ -200,13 +251,12 @@ export default function RecurringTransactionForm({
                 id="description"
                 name="description"
                 placeholder="e.g. Monthly Rent"
+                defaultValue={initialData?.description ?? ""}
               />
             </div>
 
             <div className="pt-4 space-y-2">
-              <Button type="submit" className="w-full" disabled={isInvalidDay}>
-                Create Schedule
-              </Button>
+              <SubmitButton disabled={isInvalidDay} mode={mode} />
               <Button variant="outline" className="w-full" asChild>
                 <Link href={`/sheet/${sheetId}/settings/recurring`}>
                   Cancel
@@ -215,7 +265,90 @@ export default function RecurringTransactionForm({
             </div>
           </form>
         )}
+
+        {mode === "edit" && initialData && (
+          <div className="mt-8 pt-8 border-t">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full">
+                  Delete Schedule
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this recurring schedule. Past
+                    transactions will not be affected.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <form
+                    action={deleteRecurringTransaction}
+                    className="mt-2 sm:mt-0"
+                  >
+                    <input type="hidden" name="sheetId" value={sheetId} />
+                    <input
+                      type="hidden"
+                      name="recurringId"
+                      value={initialData.id}
+                    />
+                    <DeleteButton />
+                  </form>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+function SubmitButton({
+  disabled,
+  mode,
+}: {
+  disabled: boolean;
+  mode: "add" | "edit";
+}) {
+  const { pending } = useFormStatus();
+
+  let content;
+  if (pending) {
+    content = (
+      <>
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        {mode === "edit" ? "Saving..." : "Creating..."}
+      </>
+    );
+  } else {
+    content = mode === "edit" ? "Save Changes" : "Create Schedule";
+  }
+
+  return (
+    <Button type="submit" className="w-full" disabled={disabled || pending}>
+      {content}
+    </Button>
+  );
+}
+
+function DeleteButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <AlertDialogAction asChild variant="destructive" disabled={pending}>
+      <button type="submit">
+        {pending ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Deleting...
+          </>
+        ) : (
+          "Confirm Delete"
+        )}
+      </button>
+    </AlertDialogAction>
   );
 }
