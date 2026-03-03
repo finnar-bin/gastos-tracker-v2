@@ -1,5 +1,5 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
-import { Settings, PlusCircle, Key, Repeat } from "lucide-react";
+import { Settings, PlusCircle, Key, Repeat, Users } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -43,6 +43,13 @@ export default async function SettingsPage({
             >
               <Repeat className="h-5 w-5 text-muted-foreground" />
               Recurring Transactions
+            </Link>
+            <Link
+              href={`/sheet/${sheetId}/settings/users`}
+              className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
+            >
+              <Users className="h-5 w-5 text-muted-foreground" />
+              Manage Users
             </Link>
           </div>
         </section>
