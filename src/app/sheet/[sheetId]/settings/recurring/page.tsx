@@ -12,13 +12,12 @@ import {
   Repeat,
   Calendar,
   CreditCard,
-  Trash2,
   LayoutGrid,
 } from "lucide-react";
-import * as LucideIcons from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { getLucideIcon } from "@/lib/lucide-icons";
 
 export default async function RecurringTransactionsPage({
   params,
@@ -90,8 +89,7 @@ export default async function RecurringTransactionsPage({
           </div>
         ) : (
           recurringList.map((rt) => {
-            const Icon =
-              (LucideIcons as any)[rt.categoryIcon || ""] || LayoutGrid;
+            const Icon = getLucideIcon(rt.categoryIcon) || LayoutGrid;
             return (
               <Link
                 key={rt.id}

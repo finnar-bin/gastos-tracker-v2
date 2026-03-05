@@ -15,7 +15,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { categories, paymentTypes } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import * as LucideIcons from "lucide-react";
+import { getLucideIcon } from "@/lib/lucide-icons";
 
 export default async function AddTransactionPage({
   params,
@@ -112,7 +112,7 @@ export default async function AddTransactionPage({
                   </SelectTrigger>
                   <SelectContent>
                     {availablePaymentTypes.map((pt) => {
-                      const Icon = (LucideIcons as any)[pt.icon];
+                      const Icon = getLucideIcon(pt.icon);
                       return (
                         <SelectItem key={pt.id} value={pt.id}>
                           <div className="flex items-center gap-2">

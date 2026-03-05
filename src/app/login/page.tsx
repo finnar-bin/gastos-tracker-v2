@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { login, loginWithGoogle } from "./actions";
@@ -17,6 +17,29 @@ import {
 } from "@/components/ui/card";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+
+function LoginPageFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 section-padding">
+      <Card className="w-full max-w-md animate-in fade-in zoom-in duration-300">
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl font-bold tracking-tight text-primary">
+            Gastos Tracker
+          </CardTitle>
+          <CardDescription>Track your finances with ease</CardDescription>
+        </CardHeader>
+      </Card>
+    </div>
+  );
+}
+
+function LoginPageContent() {
   const [showPassword, setShowPassword] = useState(false);
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/sheet";

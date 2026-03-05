@@ -1,18 +1,12 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
-import {
-  ArrowLeft,
-  Plus,
-  LayoutGrid,
-  Calendar,
-  DollarSign,
-} from "lucide-react";
+import { ArrowLeft, Plus, LayoutGrid, Calendar } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { Card, CardContent } from "@/components/ui/card";
-import * as LucideIcons from "lucide-react";
+import { getLucideIcon } from "@/lib/lucide-icons";
 
 export default async function CategorySettingsPage({
   params,
@@ -65,7 +59,7 @@ export default async function CategorySettingsPage({
           </div>
         ) : (
           categoryList.map((cat) => {
-            const Icon = (LucideIcons as any)[cat.icon] || LayoutGrid;
+            const Icon = getLucideIcon(cat.icon) || LayoutGrid;
             return (
               <Link
                 key={cat.id}

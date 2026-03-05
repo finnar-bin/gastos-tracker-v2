@@ -54,7 +54,7 @@ export async function updateRecurringTransaction(formData: FormData) {
     (frequency === "monthly" && existing.dayOfMonth !== dayOfMonth?.toString())
   ) {
     const now = new Date();
-    let nextDate = new Date(now.toISOString().split("T")[0]);
+    const nextDate = new Date(now.toISOString().split("T")[0]);
 
     if (frequency === "monthly" && dayOfMonth) {
       nextDate.setDate(dayOfMonth);

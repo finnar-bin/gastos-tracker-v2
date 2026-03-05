@@ -19,7 +19,6 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { Repeat, Loader2 } from "lucide-react";
-import * as LucideIcons from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +31,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useFormStatus } from "react-dom";
+import { getLucideIcon } from "@/lib/lucide-icons";
 
 interface Category {
   id: string;
@@ -94,8 +94,8 @@ export default function RecurringTransactionForm({
         {categories.length === 0 ? (
           <div className="py-6 text-center space-y-4">
             <p className="text-muted-foreground">
-              You haven't created any categories for this sheet yet. You need at
-              least one category to set up a recurring transaction.
+              You haven&apos;t created any categories for this sheet yet. You
+              need at least one category to set up a recurring transaction.
             </p>
             <Button asChild className="w-full">
               <Link href={`/sheet/${sheetId}/settings/category`}>
@@ -151,7 +151,7 @@ export default function RecurringTransactionForm({
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => {
-                    const Icon = (LucideIcons as any)[cat.icon];
+                    const Icon = getLucideIcon(cat.icon);
                     return (
                       <SelectItem key={cat.id} value={cat.id}>
                         <div className="flex items-center gap-2">
@@ -177,7 +177,7 @@ export default function RecurringTransactionForm({
                 </SelectTrigger>
                 <SelectContent>
                   {paymentTypes.map((pt) => {
-                    const Icon = (LucideIcons as any)[pt.icon];
+                    const Icon = getLucideIcon(pt.icon);
                     return (
                       <SelectItem key={pt.id} value={pt.id}>
                         <div className="flex items-center gap-2">

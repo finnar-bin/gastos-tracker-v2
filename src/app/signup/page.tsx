@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { Suspense, useActionState, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { signup } from "./actions";
@@ -18,6 +18,31 @@ import {
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
 export default function SignupPage() {
+  return (
+    <Suspense fallback={<SignupPageFallback />}>
+      <SignupPageContent />
+    </Suspense>
+  );
+}
+
+function SignupPageFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 section-padding">
+      <Card className="w-full max-w-md animate-in fade-in zoom-in duration-300">
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl font-bold tracking-tight text-primary">
+            Create an Account
+          </CardTitle>
+          <CardDescription>
+            Enter your details below to create your account
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    </div>
+  );
+}
+
+function SignupPageContent() {
   const [state, action, isPending] = useActionState(signup, null);
   const [showPassword, setShowPassword] = useState(false);
   const searchParams = useSearchParams();

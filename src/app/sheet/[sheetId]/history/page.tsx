@@ -2,12 +2,12 @@ import { requireSheetAccess } from "@/lib/auth/sheets";
 import { db } from "@/lib/db";
 import { transactions, categories, paymentTypes } from "@/lib/db/schema";
 import { desc, eq, and, gte, lte } from "drizzle-orm";
-import * as LucideIcons from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
 import { HistoryFilter } from "./filter";
+import { getLucideIcon } from "@/lib/lucide-icons";
 
 export default async function HistoryPage({
   params,
@@ -81,7 +81,7 @@ export default async function HistoryPage({
         ) : (
           txs.map((tx) => {
             const PaymentIcon = tx.paymentTypeIcon
-              ? (LucideIcons as any)[tx.paymentTypeIcon]
+              ? getLucideIcon(tx.paymentTypeIcon)
               : null;
             return (
               <Card key={tx.id} className="overflow-hidden shadow-sm">

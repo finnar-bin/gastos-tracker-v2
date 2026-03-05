@@ -127,21 +127,21 @@ export async function createSheetInvite(formData: FormData) {
   return { success: "Invite sent successfully.", inviteUrl };
 }
 
-export async function revokeSheetInvite(formData: FormData) {
+export async function revokeSheetInvite(formData: FormData): Promise<void> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { error: "You need to login first." };
+  if (!user) return;
 
   const inviteId = formData.get("inviteId") as string;
   const sheetId = formData.get("sheetId") as string;
-  if (!inviteId || !sheetId) return { error: "Invalid invite request." };
+  if (!inviteId || !sheetId) return;
 
   const inviterRole = await getSheetRoleForUser(sheetId, user.id);
   if (inviterRole !== "admin") {
-    return { error: "Only sheet admins can revoke invites." };
+    return;
   }
 
   await db
@@ -156,29 +156,27 @@ export async function revokeSheetInvite(formData: FormData) {
     );
 
   revalidatePath(`/sheet/${sheetId}/settings/users`);
-  return { success: "Invite revoked." };
 }
 
-export async function removeSheetUser(formData: FormData) {
+export async function removeSheetUser(formData: FormData): Promise<void> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { error: "You need to login first." };
+  if (!user) return;
 
   const sheetId = formData.get("sheetId") as string;
   const targetUserId = formData.get("targetUserId") as string;
-  if (!sheetId || !targetUserId)
-    return { error: "Invalid user removal request." };
+  if (!sheetId || !targetUserId) return;
 
   const currentUserRole = await getSheetRoleForUser(sheetId, user.id);
   if (currentUserRole !== "admin") {
-    return { error: "Only sheet admins can remove users." };
+    return;
   }
 
   if (targetUserId === user.id) {
-    return { error: "You cannot remove yourself from this page." };
+    return;
   }
 
   const targetMembershipRows = await db
@@ -193,7 +191,7 @@ export async function removeSheetUser(formData: FormData) {
   const targetMembership = targetMembershipRows[0];
 
   if (!targetMembership) {
-    return { error: "User is no longer in this sheet." };
+    return;
   }
 
   if (targetMembership.role === "admin") {
@@ -205,7 +203,7 @@ export async function removeSheetUser(formData: FormData) {
       );
 
     if (sheetAdmins.length <= 1) {
-      return { error: "Cannot remove the last admin from a sheet." };
+      return;
     }
   }
 
@@ -217,6 +215,4 @@ export async function removeSheetUser(formData: FormData) {
 
   revalidatePath(`/sheet/${sheetId}/settings/users`);
   revalidatePath("/sheet");
-
-  return { success: "User removed from sheet." };
 }

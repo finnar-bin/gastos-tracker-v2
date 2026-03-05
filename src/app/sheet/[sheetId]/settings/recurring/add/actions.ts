@@ -36,7 +36,7 @@ export async function addRecurringTransaction(formData: FormData) {
 
   // Calculate initial nextProcessDate
   const now = new Date();
-  let nextDate = new Date(now.toISOString().split("T")[0]);
+  const nextDate = new Date(now.toISOString().split("T")[0]);
 
   if (frequency === "monthly" && dayOfMonth) {
     nextDate.setDate(dayOfMonth);

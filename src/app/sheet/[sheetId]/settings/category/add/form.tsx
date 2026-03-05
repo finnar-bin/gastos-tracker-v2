@@ -32,8 +32,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { LayoutGrid, Info, Loader2, SmilePlus } from "lucide-react";
-import * as LucideIcons from "lucide-react";
+import { LayoutGrid, Loader2, SmilePlus } from "lucide-react";
+import { getLucideIcon } from "@/lib/lucide-icons";
+
+function renderLucideIcon(name: string, className: string) {
+  const Icon = getLucideIcon(name);
+  return Icon ? <Icon className={className} /> : null;
+}
 
 export const AVAILABLE_ICONS = [
   // Food & Drinks
@@ -122,10 +127,6 @@ export default function CategoryForm({
   const [selectedIcon, setSelectedIcon] = useState(initialData?.icon ?? "");
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
 
-  const SelectedIconComponent = selectedIcon
-    ? (LucideIcons as any)[selectedIcon]
-    : null;
-
   const formAction = mode === "edit" ? updateCategory : addCategory;
 
   return (
@@ -163,9 +164,9 @@ export default function CategoryForm({
                   variant="outline"
                   className="w-full justify-start gap-2"
                 >
-                  {SelectedIconComponent ? (
+                  {selectedIcon ? (
                     <>
-                      <SelectedIconComponent className="h-4 w-4" />
+                      {renderLucideIcon(selectedIcon, "h-4 w-4")}
                       <span>{selectedIcon}</span>
                     </>
                   ) : (
@@ -184,7 +185,6 @@ export default function CategoryForm({
                   style={{ maxHeight: "calc(5 * 40px)" }}
                 >
                   {AVAILABLE_ICONS.map((iconName) => {
-                    const Icon = (LucideIcons as any)[iconName];
                     return (
                       <button
                         key={iconName}
@@ -200,7 +200,7 @@ export default function CategoryForm({
                         }`}
                         title={iconName}
                       >
-                        <Icon className="h-5 w-5" />
+                        {renderLucideIcon(iconName, "h-5 w-5")}
                       </button>
                     );
                   })}
