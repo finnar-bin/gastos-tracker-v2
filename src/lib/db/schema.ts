@@ -10,15 +10,22 @@ import {
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
-export const profiles = pgTable("profiles", {
-  id: uuid("id").primaryKey(),
-  email: text("email").notNull(),
-  displayName: text("display_name"),
-  avatarUrl: text("avatar_url"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const profiles = pgTable(
+  "profiles",
+  {
+    id: uuid("id").primaryKey(),
+    email: text("email").notNull(),
+    displayName: text("display_name"),
+    avatarUrl: text("avatar_url"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    emailIdx: index("profiles_email_idx").on(table.email),
+  }),
+);
 
 export const userRoleEnum = pgEnum("user_role", ["viewer", "editor", "admin"]);
 export const transactionTypeEnum = pgEnum("transaction_type", [
@@ -65,6 +72,7 @@ export const sheetUsers = pgTable(
       table.sheetId,
       table.userId,
     ),
+    userIdIdx: index("sheet_users_user_id_idx").on(table.userId),
   }),
 );
 
@@ -100,37 +108,57 @@ export const sheetInvites = pgTable(
       table.status,
       table.expiresAt,
     ),
+    sheetStatusExpiresIdx: index("sheet_invites_sheet_status_expires_idx").on(
+      table.sheetId,
+      table.status,
+      table.expiresAt,
+    ),
   }),
 );
 
-export const categories = pgTable("categories", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  name: text("name").notNull(),
-  icon: text("icon").notNull(),
-  sheetId: uuid("sheet_id")
-    .notNull()
-    .references(() => sheets.id, { onDelete: "cascade" }),
-  type: transactionTypeEnum("type").notNull(),
-  budget: decimal("budget", { precision: 10, scale: 2 }),
-  defaultAmount: decimal("default_amount", {
-    precision: 10,
-    scale: 2,
+export const categories = pgTable(
+  "categories",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    icon: text("icon").notNull(),
+    sheetId: uuid("sheet_id")
+      .notNull()
+      .references(() => sheets.id, { onDelete: "cascade" }),
+    type: transactionTypeEnum("type").notNull(),
+    budget: decimal("budget", { precision: 10, scale: 2 }),
+    defaultAmount: decimal("default_amount", {
+      precision: 10,
+      scale: 2,
+    }),
+    dueDate: date("due_date"),
+    createdBy: uuid("created_by").notNull(), // Links to auth.users
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    sheetCreatedAtIdx: index("categories_sheet_created_at_idx").on(
+      table.sheetId,
+      table.createdAt,
+    ),
   }),
-  dueDate: date("due_date"),
-  createdBy: uuid("created_by").notNull(), // Links to auth.users
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+);
 
-export const paymentTypes = pgTable("payment_types", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  name: text("name").notNull(),
-  icon: text("icon").notNull(),
-  sheetId: uuid("sheet_id")
-    .notNull()
-    .references(() => sheets.id, { onDelete: "cascade" }),
-  createdBy: uuid("created_by").notNull(), // Links to auth.users
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const paymentTypes = pgTable(
+  "payment_types",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    icon: text("icon").notNull(),
+    sheetId: uuid("sheet_id")
+      .notNull()
+      .references(() => sheets.id, { onDelete: "cascade" }),
+    createdBy: uuid("created_by").notNull(), // Links to auth.users
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    sheetIdIdx: index("payment_types_sheet_id_idx").on(table.sheetId),
+  }),
+);
 
 export const transactions = pgTable("transactions", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -153,32 +181,44 @@ export const transactions = pgTable("transactions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const recurringTransactions = pgTable("recurring_transactions", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  sheetId: uuid("sheet_id").references(() => sheets.id, {
-    onDelete: "cascade",
-  }),
-  categoryId: uuid("category_id")
-    .notNull()
-    .references(() => categories.id, { onDelete: "cascade" }),
-  paymentType: uuid("payment_type_id")
-    .notNull()
-    .references(() => paymentTypes.id, {
-      onDelete: "set null",
+export const recurringTransactions = pgTable(
+  "recurring_transactions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    sheetId: uuid("sheet_id").references(() => sheets.id, {
+      onDelete: "cascade",
     }),
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  type: transactionTypeEnum("type").notNull(),
-  description: text("description"),
+    categoryId: uuid("category_id")
+      .notNull()
+      .references(() => categories.id, { onDelete: "cascade" }),
+    paymentType: uuid("payment_type_id")
+      .notNull()
+      .references(() => paymentTypes.id, {
+        onDelete: "set null",
+      }),
+    amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+    type: transactionTypeEnum("type").notNull(),
+    description: text("description"),
 
-  // Scheduling Rules
-  frequency: recurringFrequencyEnum("frequency").notNull().default("monthly"),
-  dayOfMonth: decimal("day_of_month"), // e.g. 5 for the 5th of every month
+    // Scheduling Rules
+    frequency: recurringFrequencyEnum("frequency").notNull().default("monthly"),
+    dayOfMonth: decimal("day_of_month"), // e.g. 5 for the 5th of every month
 
-  // Processing Tracking
-  lastProcessedAt: timestamp("last_processed_at"),
-  nextProcessDate: date("next_process_date").notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
+    // Processing Tracking
+    lastProcessedAt: timestamp("last_processed_at"),
+    nextProcessDate: date("next_process_date").notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
 
-  createdBy: uuid("created_by").notNull(), // Links to auth.users
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+    createdBy: uuid("created_by").notNull(), // Links to auth.users
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    sheetCreatedAtIdx: index("recurring_transactions_sheet_created_at_idx").on(
+      table.sheetId,
+      table.createdAt,
+    ),
+    activeDueDateIdx: index("recurring_transactions_active_due_date_idx")
+      .on(table.nextProcessDate)
+      .where(sql`${table.isActive} = true`),
+  }),
+);

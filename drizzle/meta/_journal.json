@@ -71,6 +71,13 @@
       "when": 1772600000000,
       "tag": "0009_handy_sheet_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1772610000000,
+      "tag": "0010_index_hot_paths",
+      "breakpoints": true
     }
   ]
 }
