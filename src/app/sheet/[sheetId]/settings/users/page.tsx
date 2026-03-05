@@ -1,13 +1,16 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
-import { ArrowLeft, UserPlus, Mail, Shield } from "lucide-react";
+import { ArrowLeft, Mail, Shield } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
-import { sheetUsers, profiles } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { sheetUsers, profiles, sheetInvites } from "@/lib/db/schema";
+import { and, eq, gt } from "drizzle-orm";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { createHash } from "crypto";
+import { InviteUserDialog } from "./invite-user-dialog";
+import { revokeSheetInvite } from "./actions";
+import { RemoveUserButton } from "./remove-user-button";
 
 export default async function ManageUsersPage({
   params,
@@ -15,7 +18,15 @@ export default async function ManageUsersPage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  const { sheet } = await requireSheetAccess(sheetId);
+  const { sheet, user } = await requireSheetAccess(sheetId);
+
+  const currentUserRoleRows = await db
+    .select({ role: sheetUsers.role })
+    .from(sheetUsers)
+    .where(
+      and(eq(sheetUsers.sheetId, sheetId), eq(sheetUsers.userId, user.id)),
+    );
+  const canManageInvites = currentUserRoleRows[0]?.role === "admin";
 
   const members = await db
     .select({
@@ -28,6 +39,23 @@ export default async function ManageUsersPage({
     .from(sheetUsers)
     .innerJoin(profiles, eq(sheetUsers.userId, profiles.id))
     .where(eq(sheetUsers.sheetId, sheetId));
+
+  const pendingInvites = await db
+    .select({
+      id: sheetInvites.id,
+      email: sheetInvites.invitedEmail,
+      role: sheetInvites.role,
+      expiresAt: sheetInvites.expiresAt,
+      createdAt: sheetInvites.createdAt,
+    })
+    .from(sheetInvites)
+    .where(
+      and(
+        eq(sheetInvites.sheetId, sheetId),
+        eq(sheetInvites.status, "pending"),
+        gt(sheetInvites.expiresAt, new Date()),
+      ),
+    );
 
   const getGravatarUrl = (email: string) => {
     const hash = createHash("md5")
@@ -50,10 +78,46 @@ export default async function ManageUsersPage({
             <p className="text-sm text-muted-foreground">{sheet.name}</p>
           </div>
         </div>
-        <Button size="sm" className="gap-2" disabled>
-          <UserPlus className="h-4 w-4" /> Invite
-        </Button>
+        {canManageInvites ? (
+          <InviteUserDialog sheetId={sheetId} />
+        ) : (
+          <Button size="sm" className="gap-2" disabled>
+            Invite
+          </Button>
+        )}
       </div>
+
+      {pendingInvites.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Pending Invites
+          </h2>
+          <div className="space-y-2">
+            {pendingInvites.map((invite) => (
+              <Card key={invite.id} className="border-dashed">
+                <CardContent className="p-4 flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium">{invite.email}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Role: <span className="capitalize">{invite.role}</span> ·
+                      Expires {invite.expiresAt.toLocaleDateString()}
+                    </div>
+                  </div>
+                  {canManageInvites ? (
+                    <form action={revokeSheetInvite}>
+                      <input type="hidden" name="inviteId" value={invite.id} />
+                      <input type="hidden" name="sheetId" value={sheetId} />
+                      <Button size="sm" variant="outline">
+                        Revoke
+                      </Button>
+                    </form>
+                  ) : null}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         {members.length === 0 ? (
@@ -93,6 +157,15 @@ export default async function ManageUsersPage({
                       <Shield className="h-3 w-3" />
                       {member.role}
                     </div>
+                    {canManageInvites && member.id !== user.id ? (
+                      <div className="mt-2">
+                        <RemoveUserButton
+                          sheetId={sheetId}
+                          targetUserId={member.id}
+                          targetLabel={member.displayName || member.email}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </CardContent>

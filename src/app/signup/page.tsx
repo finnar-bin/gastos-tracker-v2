@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { signup } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,8 @@ import { Loader2, Eye, EyeOff } from "lucide-react";
 export default function SignupPage() {
   const [state, action, isPending] = useActionState(signup, null);
   const [showPassword, setShowPassword] = useState(false);
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/sheet";
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 section-padding">
@@ -33,6 +36,7 @@ export default function SignupPage() {
         </CardHeader>
         <CardContent>
           <form action={action} className="space-y-4">
+            <input type="hidden" name="next" value={next} />
             <div className="space-y-2">
               <Label htmlFor="displayName">Display Name</Label>
               <Input
@@ -99,7 +103,10 @@ export default function SignupPage() {
         <CardFooter className="flex justify-center">
           <div className="text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link href="/login" className="text-primary hover:underline">
+            <Link
+              href={`/login?next=${encodeURIComponent(next)}`}
+              className="text-primary hover:underline"
+            >
               Log in
             </Link>
           </div>

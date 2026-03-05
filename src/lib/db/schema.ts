@@ -4,10 +4,11 @@ import {
   timestamp,
   uuid,
   decimal,
-  varchar,
   date,
   pgEnum,
   boolean,
+  uniqueIndex,
+  index,
 } from "drizzle-orm/pg-core";
 
 export const profiles = pgTable("profiles", {
@@ -30,6 +31,13 @@ export const recurringFrequencyEnum = pgEnum("recurring_frequency", [
   "monthly",
   "yearly",
 ]);
+export const inviteStatusEnum = pgEnum("invite_status", [
+  "pending",
+  "accepted",
+  "declined",
+  "revoked",
+  "expired",
+]);
 
 export const sheets = pgTable("sheets", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -40,16 +48,60 @@ export const sheets = pgTable("sheets", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const sheetUsers = pgTable("sheet_users", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  sheetId: uuid("sheet_id")
-    .notNull()
-    .references(() => sheets.id, { onDelete: "cascade" }),
-  userId: uuid("user_id").notNull(), // Links to auth.users,
-  role: userRoleEnum("role").notNull().default("viewer"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const sheetUsers = pgTable(
+  "sheet_users",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    sheetId: uuid("sheet_id")
+      .notNull()
+      .references(() => sheets.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull(), // Links to auth.users,
+    role: userRoleEnum("role").notNull().default("viewer"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    sheetUserUnique: uniqueIndex("sheet_users_sheet_id_user_id_uq").on(
+      table.sheetId,
+      table.userId,
+    ),
+  }),
+);
+
+export const sheetInvites = pgTable(
+  "sheet_invites",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    sheetId: uuid("sheet_id")
+      .notNull()
+      .references(() => sheets.id, { onDelete: "cascade" }),
+    invitedEmail: text("invited_email").notNull(),
+    role: userRoleEnum("role").notNull().default("viewer"),
+    tokenHash: text("token_hash").notNull(),
+    status: inviteStatusEnum("status").notNull().default("pending"),
+    invitedBy: uuid("invited_by").notNull(), // Links to auth.users
+    acceptedBy: uuid("accepted_by"), // Links to auth.users
+    expiresAt: timestamp("expires_at").notNull(),
+    acceptedAt: timestamp("accepted_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    tokenHashUnique: uniqueIndex("sheet_invites_token_hash_uq").on(
+      table.tokenHash,
+    ),
+    emailStatusIdx: index("sheet_invites_sheet_email_status_idx").on(
+      table.sheetId,
+      table.invitedEmail,
+      table.status,
+    ),
+    inviteLookupIdx: index("sheet_invites_email_status_expires_idx").on(
+      table.invitedEmail,
+      table.status,
+      table.expiresAt,
+    ),
+  }),
+);
 
 export const categories = pgTable("categories", {
   id: uuid("id").defaultRandom().primaryKey(),

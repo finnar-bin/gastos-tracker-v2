@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { login, loginWithGoogle } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,8 @@ import {
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/sheet";
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 section-padding">
@@ -29,6 +32,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form className="space-y-4">
+            <input type="hidden" name="next" value={next} />
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -68,7 +72,9 @@ export default function LoginPage() {
                 Log in
               </Button>
               <Button asChild variant="outline" className="w-full">
-                <Link href="/signup">Sign up</Link>
+                <Link href={`/signup?next=${encodeURIComponent(next)}`}>
+                  Sign up
+                </Link>
               </Button>
             </div>
           </form>
@@ -83,7 +89,7 @@ export default function LoginPage() {
             </div>
           </div>
           <Button
-            onClick={loginWithGoogle}
+            onClick={() => loginWithGoogle(next)}
             variant="secondary"
             className="w-full cursor-pointer"
           >
