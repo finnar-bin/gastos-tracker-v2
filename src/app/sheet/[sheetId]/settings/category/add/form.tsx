@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useFormStatus } from "react-dom";
 import { addCategory } from "./actions";
 import { updateCategory, deleteCategory } from "../[categoryId]/edit/actions";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { LayoutGrid, Loader2, SmilePlus } from "lucide-react";
+import { LayoutGrid, SmilePlus } from "lucide-react";
 import { getLucideIcon } from "@/lib/lucide-icons";
 
 function renderLucideIcon(name: string, className: string) {
@@ -321,42 +321,26 @@ function SubmitButton({
   disabled: boolean;
   mode: "add" | "edit";
 }) {
-  const { pending } = useFormStatus();
-
-  let content;
-  if (pending) {
-    content = (
-      <>
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        {mode === "edit" ? "Saving..." : "Creating..."}
-      </>
-    );
-  } else {
-    content = mode === "edit" ? "Save Changes" : "Create Category";
-  }
-
   return (
-    <Button type="submit" className="w-full" disabled={disabled || pending}>
-      {content}
-    </Button>
+    <LoadingButton
+      type="submit"
+      className="w-full"
+      disabled={disabled}
+      text={mode === "edit" ? "Save Changes" : "Create Category"}
+      loadingText={mode === "edit" ? "Saving..." : "Creating..."}
+    />
   );
 }
 
 function DeleteButton() {
-  const { pending } = useFormStatus();
-
   return (
-    <AlertDialogAction asChild variant="destructive" disabled={pending}>
-      <button type="submit">
-        {pending ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Deleting...
-          </>
-        ) : (
-          "Confirm Delete"
-        )}
-      </button>
+    <AlertDialogAction asChild variant="destructive">
+      <LoadingButton
+        type="submit"
+        variant="destructive"
+        text="Confirm Delete"
+        loadingText="Deleting..."
+      />
     </AlertDialogAction>
   );
 }

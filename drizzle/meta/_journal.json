@@ -78,6 +78,13 @@
       "when": 1772610000000,
       "tag": "0010_index_hot_paths",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1772800000000,
+      "tag": "0011_optional_payment_type_for_income",
+      "breakpoints": true
     }
   ]
 }

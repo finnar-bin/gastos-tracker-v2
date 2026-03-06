@@ -4,7 +4,7 @@ import { Suspense, useActionState, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { signup } from "./actions";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -15,7 +15,7 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function SignupPage() {
   return (
@@ -119,10 +119,13 @@ function SignupPageContent() {
               </div>
             )}
 
-            <Button className="w-full cursor-pointer" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign Up
-            </Button>
+            <LoadingButton
+              className="w-full cursor-pointer"
+              text="Sign Up"
+              loadingText="Signing up..."
+              loading={isPending}
+              trackFormStatus={false}
+            />
           </form>
         </CardContent>
         <CardFooter className="flex justify-center">

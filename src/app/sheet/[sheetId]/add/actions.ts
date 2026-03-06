@@ -20,12 +20,16 @@ export async function addTransaction(formData: FormData) {
   const categoryId = formData.get("categoryId") as string;
   const sheetId = formData.get("sheetId") as string;
   const description = formData.get("description") as string;
-  const paymentType = formData.get("paymentType") as string;
+  const paymentTypeValue = formData.get("paymentType");
+  const paymentType =
+    typeof paymentTypeValue === "string" && paymentTypeValue.trim().length > 0
+      ? paymentTypeValue
+      : null;
   const dateStr = formData.get("date") as string;
   const date = dateStr || new Date().toISOString().split("T")[0];
 
-  if (!paymentType) {
-    throw new Error("Payment type is required");
+  if (type === "expense" && !paymentType) {
+    throw new Error("Payment type is required for expense transactions");
   }
 
   await db.insert(transactions).values({

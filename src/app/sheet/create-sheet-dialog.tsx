@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/loading-button";
 import {
   Dialog,
   DialogContent,
@@ -73,9 +74,13 @@ export function CreateSheetDialog() {
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create Sheet"}
-            </Button>
+            <LoadingButton
+              type="submit"
+              text="Create Sheet"
+              loadingText="Creating..."
+              loading={loading}
+              trackFormStatus={false}
+            />
           </DialogFooter>
         </form>
       </DialogContent>

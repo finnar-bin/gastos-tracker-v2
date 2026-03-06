@@ -1,8 +1,8 @@
 "use client";
 
-import { useFormStatus } from "react-dom";
-import { Loader2, UserMinus } from "lucide-react";
+import { UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/loading-button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,23 +59,14 @@ export function RemoveUserButton({
 }
 
 function ConfirmRemoveActionButton() {
-  const { pending } = useFormStatus();
-
   return (
-    <AlertDialogAction
-      variant="destructive"
-      type="submit"
-      disabled={pending}
-      aria-disabled={pending}
-    >
-      {pending ? (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Removing...
-        </>
-      ) : (
-        "Remove User"
-      )}
+    <AlertDialogAction asChild variant="destructive">
+      <LoadingButton
+        type="submit"
+        variant="destructive"
+        text="Remove User"
+        loadingText="Removing..."
+      />
     </AlertDialogAction>
   );
 }
