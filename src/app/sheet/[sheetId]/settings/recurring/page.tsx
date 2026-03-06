@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { Header } from "@/components/Header";
+import { FormattedAmount } from "@/components/formatted-amount";
 
 export default async function RecurringTransactionsPage({
   params,
@@ -121,7 +122,7 @@ export default async function RecurringTransactionsPage({
                         <div
                           className={`font-bold ${rt.type === "income" ? "text-green-600" : "text-primary"}`}
                         >
-                          {rt.type === "income" ? "+" : "-"}${rt.amount}
+                          <FormattedAmount amount={rt.amount} type={rt.type} />
                         </div>
                         <div className="text-[10px] text-muted-foreground flex items-center justify-end gap-1">
                           <CreditCard className="h-3 w-3" />

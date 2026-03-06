@@ -8,6 +8,7 @@ import { eq, desc } from "drizzle-orm";
 import { Card, CardContent } from "@/components/ui/card";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { Header } from "@/components/Header";
+import { FormattedAmount } from "@/components/formatted-amount";
 
 export default async function CategorySettingsPage({
   params,
@@ -78,7 +79,11 @@ export default async function CategorySettingsPage({
                       <div className="text-right">
                         {cat.budget && (
                           <div className="text-sm font-medium text-primary">
-                            ${cat.budget} budget
+                            <FormattedAmount
+                              amount={cat.budget}
+                              showSign={false}
+                            />{" "}
+                            budget
                           </div>
                         )}
                         {cat.dueDate && (

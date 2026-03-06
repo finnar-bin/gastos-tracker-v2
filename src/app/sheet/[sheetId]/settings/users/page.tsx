@@ -5,12 +5,11 @@ import { db } from "@/lib/db";
 import { sheetUsers, profiles, sheetInvites } from "@/lib/db/schema";
 import { and, eq, gt } from "drizzle-orm";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { createHash } from "crypto";
 import { InviteUserDialog } from "./invite-user-dialog";
 import { revokeSheetInvite } from "./actions";
 import { RemoveUserButton } from "./remove-user-button";
 import { Header } from "@/components/Header";
+import { UserAvatar } from "@/components/user-avatar";
 
 export default async function ManageUsersPage({
   params,
@@ -56,13 +55,6 @@ export default async function ManageUsersPage({
         gt(sheetInvites.expiresAt, new Date()),
       ),
     );
-
-  const getGravatarUrl = (email: string) => {
-    const hash = createHash("md5")
-      .update(email.trim().toLowerCase())
-      .digest("hex");
-    return `https://www.gravatar.com/avatar/${hash}?d=mp`;
-  };
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 pb-24">
@@ -128,16 +120,12 @@ export default async function ManageUsersPage({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src={member.avatarUrl || getGravatarUrl(member.email)}
-                        alt={member.displayName || member.email}
-                      />
-                      <AvatarFallback>
-                        {member.displayName?.charAt(0).toUpperCase() ||
-                          member.email.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserAvatar
+                      email={member.email}
+                      displayName={member.displayName}
+                      avatarUrl={member.avatarUrl}
+                      size="lg"
+                    />
                     <div>
                       <div className="font-semibold">
                         {member.displayName || "User"}
