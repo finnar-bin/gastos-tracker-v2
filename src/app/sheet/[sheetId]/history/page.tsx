@@ -95,7 +95,10 @@ export default async function HistoryPage({
             const creatorName =
               tx.creatorDisplayName || tx.creatorEmail || "Unknown user";
             return (
-              <Card key={tx.id} className="overflow-hidden shadow-sm">
+              <Card
+                key={tx.id}
+                className="overflow-hidden shadow-sm cursor-pointer hover:shadow-lg transition-all duration-300"
+              >
                 <CardContent className="px-4 flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <div

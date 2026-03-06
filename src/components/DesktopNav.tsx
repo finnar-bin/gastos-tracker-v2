@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, PlusCircle, History, Settings } from "lucide-react";
+import { Home, PlusCircle, History, Settings, LayoutList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -20,9 +20,9 @@ export function DesktopNav({ sheetId }: DesktopNavProps) {
       icon: Home,
     },
     {
-      name: "Overview",
-      href: `/sheet/${sheetId}/overview`,
-      icon: Calendar,
+      name: "Transactions",
+      href: `/sheet/${sheetId}/transactions`,
+      icon: LayoutList,
     },
     {
       name: "History",
@@ -43,7 +43,7 @@ export function DesktopNav({ sheetId }: DesktopNavProps) {
       </div>
 
       <div className="px-4 pb-6">
-        <Link href={`/sheet/${sheetId}/add`}>
+        <Link href={`/sheet/${sheetId}/transactions/add`}>
           <Button
             className="w-full justify-start gap-2 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 dark:hover:bg-emerald-700"
             size="lg"

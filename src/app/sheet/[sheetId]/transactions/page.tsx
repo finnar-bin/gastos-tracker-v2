@@ -1,5 +1,5 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
-import { Calendar } from "lucide-react";
+import { LayoutList } from "lucide-react";
 import { Header } from "@/components/Header";
 
 export default async function YearOverviewPage({
@@ -13,10 +13,10 @@ export default async function YearOverviewPage({
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6">
       <Header
-        title="Overview"
+        title="Transactions"
         sheetId={sheetId}
         backHref={`/sheet/${sheetId}`}
-        icon={Calendar}
+        icon={LayoutList}
       />
       <div className="text-center text-muted-foreground p-8">Coming soon!</div>
     </div>

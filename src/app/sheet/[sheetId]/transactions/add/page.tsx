@@ -50,7 +50,7 @@ export default async function AddTransactionPage({
           </CardHeader>
           <CardContent className="space-y-4">
             <Link
-              href={`/sheet/${selectedSheetId}/add?type=expense`}
+              href={`/sheet/${selectedSheetId}/transactions/add?type=expense`}
               className="block rounded-lg border p-4 transition-colors hover:bg-accent/70"
             >
               <div className="flex items-center gap-3">
@@ -64,7 +64,7 @@ export default async function AddTransactionPage({
               </div>
             </Link>
             <Link
-              href={`/sheet/${selectedSheetId}/add?type=income`}
+              href={`/sheet/${selectedSheetId}/transactions/add?type=income`}
               className="block rounded-lg border p-4 transition-colors hover:bg-accent/70"
             >
               <div className="flex items-center gap-3">

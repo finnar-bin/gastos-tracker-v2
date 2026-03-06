@@ -97,8 +97,6 @@ export function formatAmount(
   const minimumFractionDigits = options.minimumFractionDigits ?? 2;
   const maximumFractionDigits = options.maximumFractionDigits ?? 2;
 
-  console.log("locale", locale);
-
   try {
     return new Intl.NumberFormat(locale, {
       style: "currency",

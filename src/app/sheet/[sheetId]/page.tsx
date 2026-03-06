@@ -48,7 +48,10 @@ export default async function SheetDashboardPage({
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-4">
-        <Link href={`/sheet/${sheetId}/add?type=income`} className="w-full">
+        <Link
+          href={`/sheet/${sheetId}/transactions/add?type=income`}
+          className="w-full"
+        >
           <Button
             variant="outline"
             className="w-full h-24 flex flex-col gap-2 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-950 dark:hover:text-green-400 border-dashed"
@@ -57,7 +60,10 @@ export default async function SheetDashboardPage({
             <span className="font-medium">Income</span>
           </Button>
         </Link>
-        <Link href={`/sheet/${sheetId}/add?type=expense`} className="w-full">
+        <Link
+          href={`/sheet/${sheetId}/transactions/add?type=expense`}
+          className="w-full"
+        >
           <Button
             variant="outline"
             className="w-full h-24 flex flex-col gap-2 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400 border-dashed"

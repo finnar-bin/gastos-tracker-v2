@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, PlusCircle, History, Settings } from "lucide-react";
+import { Home, LayoutList, PlusCircle, History, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BottomBarProps {
@@ -19,13 +19,13 @@ export function BottomBar({ sheetId }: BottomBarProps) {
       icon: Home,
     },
     {
-      name: "Overview",
-      href: `/sheet/${sheetId}/overview`,
-      icon: Calendar,
+      name: "Transactions",
+      href: `/sheet/${sheetId}/transactions`,
+      icon: LayoutList,
     },
     {
       name: "Add",
-      href: `/sheet/${sheetId}/add`,
+      href: `/sheet/${sheetId}/transactions/add`,
       icon: PlusCircle,
       isAction: true,
     },
