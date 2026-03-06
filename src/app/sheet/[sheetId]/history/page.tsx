@@ -20,19 +20,50 @@ export default async function HistoryPage({
   searchParams,
 }: {
   params: Promise<{ sheetId: string }>;
-  searchParams: Promise<{ month?: string; year?: string }>;
+  searchParams: Promise<{
+    month?: string;
+    year?: string;
+    type?: string;
+    categoryId?: string;
+  }>;
 }) {
   const { sheetId } = await params;
   const { user } = await requireSheetAccess(sheetId);
-  const { month, year } = await searchParams;
+  const { month, year, type, categoryId } = await searchParams;
 
   const currentYear = new Date().getFullYear();
   const selectedYear = year ? parseInt(year) : currentYear;
   const selectedMonth = month ? parseInt(month) : new Date().getMonth();
+  const selectedType = type === "income" || type === "expense" ? type : null;
+  const selectedCategoryId = categoryId ?? null;
 
   // Build query
   const startDate = new Date(selectedYear, selectedMonth, 1);
   const endDate = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59);
+  const filterConditions = [
+    eq(transactions.createdBy, user.id),
+    eq(transactions.sheetId, sheetId),
+    gte(transactions.date, startDate.toISOString().split("T")[0]),
+    lte(transactions.date, endDate.toISOString().split("T")[0]),
+  ];
+
+  if (selectedType) {
+    filterConditions.push(eq(transactions.type, selectedType));
+  }
+
+  if (selectedCategoryId) {
+    filterConditions.push(eq(transactions.categoryId, selectedCategoryId));
+  }
+
+  const availableCategories = await db
+    .select({
+      id: categories.id,
+      name: categories.name,
+      type: categories.type,
+    })
+    .from(categories)
+    .where(eq(categories.sheetId, sheetId))
+    .orderBy(categories.name);
 
   // Fetch transactions joined with categories and payment types
   const txs = await db
@@ -54,14 +85,7 @@ export default async function HistoryPage({
     .innerJoin(categories, eq(transactions.categoryId, categories.id))
     .leftJoin(paymentTypes, eq(transactions.paymentType, paymentTypes.id))
     .leftJoin(profiles, eq(transactions.createdBy, profiles.id))
-    .where(
-      and(
-        eq(transactions.createdBy, user.id),
-        eq(transactions.sheetId, sheetId),
-        gte(transactions.date, startDate.toISOString().split("T")[0]),
-        lte(transactions.date, endDate.toISOString().split("T")[0]),
-      ),
-    )
+    .where(and(...filterConditions))
     .orderBy(desc(transactions.date));
 
   return (
@@ -78,6 +102,15 @@ export default async function HistoryPage({
         month={selectedMonth}
         year={selectedYear}
         sheetId={sheetId}
+        type={selectedType}
+        categoryId={selectedCategoryId}
+        categories={
+          selectedType
+            ? availableCategories.filter(
+                (category) => category.type === selectedType,
+              )
+            : availableCategories
+        }
       />
 
       {/* Transaction List */}
