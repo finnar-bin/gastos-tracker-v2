@@ -1,7 +1,5 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { db } from "@/lib/db";
 import {
   categories,
@@ -13,6 +11,7 @@ import RecurringTransactionForm, {
   RecurringTransactionData,
 } from "../../add/form";
 import { notFound } from "next/navigation";
+import { Header } from "@/components/Header";
 
 export default async function EditRecurringPage({
   params,
@@ -20,7 +19,7 @@ export default async function EditRecurringPage({
   params: Promise<{ sheetId: string; recurringId: string }>;
 }) {
   const { sheetId, recurringId } = await params;
-  const { sheet } = await requireSheetAccess(sheetId);
+  await requireSheetAccess(sheetId);
 
   const [recurring] = await db
     .select()
@@ -59,17 +58,12 @@ export default async function EditRecurringPage({
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 pb-24">
-      <div className="flex items-center gap-2">
-        <Link href={`/sheet/${sheetId}/settings/recurring`}>
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold">Edit Recurring</h1>
-          <p className="text-sm text-muted-foreground">{sheet.name}</p>
-        </div>
-      </div>
+      <Header
+        title="Edit Recurring"
+        sheetId={sheetId}
+        backHref={`/sheet/${sheetId}/settings/recurring`}
+        icon={ArrowLeft}
+      />
 
       <RecurringTransactionForm
         sheetId={sheetId}

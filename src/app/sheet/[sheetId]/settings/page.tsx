@@ -1,7 +1,7 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
 import { Settings, PlusCircle, Key, Repeat, Users } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Header } from "@/components/Header";
 
 export default async function SettingsPage({
   params,
@@ -9,21 +9,16 @@ export default async function SettingsPage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  const { sheet } = await requireSheetAccess(sheetId);
+  await requireSheetAccess(sheetId);
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6">
-      <div className="flex items-center gap-2">
-        <Link href={`/sheet/${sheetId}`}>
-          <Button variant="ghost" size="icon">
-            <Settings className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold">Settings</h1>
-          <p className="text-sm text-muted-foreground">{sheet.name}</p>
-        </div>
-      </div>
+      <Header
+        title="Settings"
+        sheetId={sheetId}
+        backHref={`/sheet/${sheetId}`}
+        icon={Settings}
+      />
       <div className="space-y-8">
         <section className="space-y-4">
           <h2 className="text-lg font-semibold border-b pb-2">

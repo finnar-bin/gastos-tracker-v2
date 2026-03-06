@@ -7,6 +7,7 @@ import { categories } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { Card, CardContent } from "@/components/ui/card";
 import { getLucideIcon } from "@/lib/lucide-icons";
+import { Header } from "@/components/Header";
 
 export default async function CategorySettingsPage({
   params,
@@ -14,7 +15,7 @@ export default async function CategorySettingsPage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  const { sheet } = await requireSheetAccess(sheetId);
+  await requireSheetAccess(sheetId);
 
   const categoryList = await db
     .select()
@@ -24,24 +25,19 @@ export default async function CategorySettingsPage({
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 pb-24">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Link href={`/sheet/${sheetId}/settings`}>
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
+      <Header
+        title="Categories"
+        sheetId={sheetId}
+        backHref={`/sheet/${sheetId}/settings`}
+        icon={ArrowLeft}
+        actions={
+          <Link href={`/sheet/${sheetId}/settings/category/add`}>
+            <Button size="sm" className="gap-2">
+              <Plus className="h-4 w-4" /> Add
             </Button>
           </Link>
-          <div>
-            <h1 className="text-xl font-bold">Categories</h1>
-            <p className="text-sm text-muted-foreground">{sheet.name}</p>
-          </div>
-        </div>
-        <Link href={`/sheet/${sheetId}/settings/category/add`}>
-          <Button size="sm" className="gap-2">
-            <Plus className="h-4 w-4" /> Add
-          </Button>
-        </Link>
-      </div>
+        }
+      />
 
       <div className="space-y-4">
         {categoryList.length === 0 ? (

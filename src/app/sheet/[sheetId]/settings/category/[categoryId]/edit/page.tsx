@@ -1,13 +1,12 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import CategoryForm from "../../add/form";
 import type { CategoryFormData } from "../../add/form";
 import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import { Header } from "@/components/Header";
 
 export default async function EditCategoryPage({
   params,
@@ -15,7 +14,7 @@ export default async function EditCategoryPage({
   params: Promise<{ sheetId: string; categoryId: string }>;
 }) {
   const { sheetId, categoryId } = await params;
-  const { sheet } = await requireSheetAccess(sheetId);
+  await requireSheetAccess(sheetId);
 
   const [category] = await db
     .select()
@@ -39,17 +38,12 @@ export default async function EditCategoryPage({
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 pb-24">
-      <div className="flex items-center gap-2">
-        <Link href={`/sheet/${sheetId}/settings/category`}>
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold">Edit Category</h1>
-          <p className="text-sm text-muted-foreground">{sheet.name}</p>
-        </div>
-      </div>
+      <Header
+        title="Edit Category"
+        sheetId={sheetId}
+        backHref={`/sheet/${sheetId}/settings/category`}
+        icon={ArrowLeft}
+      />
 
       <CategoryForm sheetId={sheetId} mode="edit" initialData={initialData} />
     </div>

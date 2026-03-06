@@ -2,12 +2,11 @@ import { requireSheetAccess } from "@/lib/auth/sheets";
 import { db } from "@/lib/db";
 import { transactions, categories, paymentTypes } from "@/lib/db/schema";
 import { desc, eq, and, gte, lte } from "drizzle-orm";
-import { ChevronLeft } from "lucide-react";
+import { History } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { HistoryFilter } from "./filter";
 import { getLucideIcon } from "@/lib/lucide-icons";
+import { Header } from "@/components/Header";
 
 export default async function HistoryPage({
   params,
@@ -56,14 +55,12 @@ export default async function HistoryPage({
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 min-h-screen relative">
-      <div className="flex items-center gap-2">
-        <Link href={`/sheet/${sheetId}`}>
-          <Button variant="ghost" size="icon">
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <h1 className="text-xl font-bold">History</h1>
-      </div>
+      <Header
+        title="History"
+        sheetId={sheetId}
+        backHref={`/sheet/${sheetId}`}
+        icon={History}
+      />
 
       {/* Filters */}
       <HistoryFilter

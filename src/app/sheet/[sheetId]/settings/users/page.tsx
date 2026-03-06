@@ -1,6 +1,5 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
 import { ArrowLeft, Mail, Shield } from "lucide-react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { sheetUsers, profiles, sheetInvites } from "@/lib/db/schema";
@@ -11,6 +10,7 @@ import { createHash } from "crypto";
 import { InviteUserDialog } from "./invite-user-dialog";
 import { revokeSheetInvite } from "./actions";
 import { RemoveUserButton } from "./remove-user-button";
+import { Header } from "@/components/Header";
 
 export default async function ManageUsersPage({
   params,
@@ -18,7 +18,7 @@ export default async function ManageUsersPage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  const { sheet, user } = await requireSheetAccess(sheetId);
+  const { user } = await requireSheetAccess(sheetId);
 
   const currentUserRoleRows = await db
     .select({ role: sheetUsers.role })
@@ -66,26 +66,21 @@ export default async function ManageUsersPage({
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 pb-24">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Link href={`/sheet/${sheetId}/settings`}>
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
+      <Header
+        title="Manage Users"
+        sheetId={sheetId}
+        backHref={`/sheet/${sheetId}/settings`}
+        icon={ArrowLeft}
+        actions={
+          canManageInvites ? (
+            <InviteUserDialog sheetId={sheetId} />
+          ) : (
+            <Button size="sm" className="gap-2" disabled>
+              Invite
             </Button>
-          </Link>
-          <div>
-            <h1 className="text-xl font-bold">Manage Users</h1>
-            <p className="text-sm text-muted-foreground">{sheet.name}</p>
-          </div>
-        </div>
-        {canManageInvites ? (
-          <InviteUserDialog sheetId={sheetId} />
-        ) : (
-          <Button size="sm" className="gap-2" disabled>
-            Invite
-          </Button>
-        )}
-      </div>
+          )
+        }
+      />
 
       {pendingInvites.length > 0 && (
         <div className="space-y-2">
