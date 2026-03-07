@@ -101,20 +101,20 @@ function LoginPageContent() {
               </Button>
             </div>
           </form>
-          <div className="relative my-2">
+          <div className="relative mb-2 mt-3">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
+              <span className="bg-card px-2 text-muted-foreground">
                 Or continue with
               </span>
             </div>
           </div>
           <Button
             onClick={() => loginWithGoogle(next)}
-            variant="secondary"
-            className="w-full cursor-pointer"
+            variant="outline"
+            className="w-full cursor-pointer bg-[#fbbc04] text-black hover:bg-[#f3b400] dark:bg-[#fbbc04] dark:text-black dark:hover:bg-[#f3b400]"
           >
             Google
           </Button>

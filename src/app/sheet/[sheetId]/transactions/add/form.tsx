@@ -219,7 +219,7 @@ export default function TransactionForm({
               />
             </div>
 
-            <div className="pt-4 space-y-2">
+            <div className="pt-4 space-y-4">
               <LoadingButton
                 type="submit"
                 className="w-full"

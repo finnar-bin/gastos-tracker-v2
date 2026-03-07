@@ -27,23 +27,23 @@ export default async function SettingsPage({
           <div className="flex flex-col space-y-3">
             <Link
               href={`/sheet/${sheetId}/settings/category`}
-              className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
+              className="group flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
             >
-              <PlusCircle className="h-5 w-5 text-muted-foreground" />
+              <PlusCircle className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               Add Category
             </Link>
             <Link
               href={`/sheet/${sheetId}/settings/recurring`}
-              className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
+              className="group flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
             >
-              <Repeat className="h-5 w-5 text-muted-foreground" />
+              <Repeat className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               Recurring Transactions
             </Link>
             <Link
               href={`/sheet/${sheetId}/settings/users`}
-              className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
+              className="group flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
             >
-              <Users className="h-5 w-5 text-muted-foreground" />
+              <Users className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               Manage Users
             </Link>
           </div>
@@ -56,9 +56,9 @@ export default async function SettingsPage({
           <div className="flex flex-col space-y-3">
             <Link
               href="/settings/password"
-              className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
+              className="group flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
             >
-              <Key className="h-5 w-5 text-muted-foreground" />
+              <Key className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               Update Password
             </Link>
           </div>

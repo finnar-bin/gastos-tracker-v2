@@ -161,8 +161,7 @@ export default function CategoryForm({
               <PopoverTrigger asChild>
                 <Button
                   type="button"
-                  variant="outline"
-                  className="w-full justify-start gap-2"
+                  className={`w-full justify-start gap-2 h-9 border-2 border-black rounded-lg bg-card shadow-hard-sm px-3 py-1 text-base md:text-sm font-normal hover:bg-card hover:translate-x-0 hover:translate-y-0 hover:shadow-hard-sm ${selectedIcon ? "text-foreground" : "text-muted-foreground"}`}
                 >
                   {selectedIcon ? (
                     <>
@@ -269,7 +268,7 @@ export default function CategoryForm({
             </div>
           </div> */}
 
-          <div className="pt-4 space-y-2">
+          <div className="pt-4 space-y-4">
             <SubmitButton disabled={!selectedIcon} mode={mode} />
             <Button variant="outline" className="w-full" asChild>
               <Link href={`/sheet/${sheetId}/settings/category`}>Cancel</Link>

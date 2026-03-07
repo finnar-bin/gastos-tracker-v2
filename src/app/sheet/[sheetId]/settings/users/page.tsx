@@ -115,10 +115,10 @@ export default async function ManageUsersPage({
           members.map((member) => (
             <Card
               key={member.id}
-              className="overflow-hidden border-none shadow-sm bg-card"
+              className="overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
             >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
+              <CardContent className="px-4 flex justify-between items-center">
+                <div className="flex w-full items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <UserAvatar
                       email={member.email}
@@ -127,7 +127,7 @@ export default async function ManageUsersPage({
                       size="lg"
                     />
                     <div>
-                      <div className="font-semibold">
+                      <div className="font-medium">
                         {member.displayName || "User"}
                       </div>
                       <div className="text-xs text-muted-foreground flex items-center gap-1">

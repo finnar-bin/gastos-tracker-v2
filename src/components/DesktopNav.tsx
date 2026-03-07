@@ -53,7 +53,8 @@ export function DesktopNav({ sheetId }: DesktopNavProps) {
       <div className="px-4 pb-6">
         <Link href={`/sheet/${sheetId}/transactions/add`}>
           <Button
-            className="w-full justify-start gap-2 shadow-sm outline-solid outline-2 outline-emerald-700 bg-transparent hover:bg-emerald-50 hover:text-emerald-800 text-emerald-700"
+            variant="outline"
+            className="w-full justify-start gap-2 border-emerald-700 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-800"
             size="lg"
           >
             <PlusCircle className="h-5 w-5" />

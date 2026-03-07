@@ -1,6 +1,7 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
 import { ArrowLeft, Plus, LayoutGrid, Calendar } from "lucide-react";
 import Link from "next/link";
+import { createElement } from "react";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
@@ -57,28 +58,42 @@ export default async function CategorySettingsPage({
         ) : (
           categoryList.map((cat) => {
             const Icon = getLucideIcon(cat.icon) || LayoutGrid;
+            const isExpense = cat.type === "expense";
             return (
               <Link
                 key={cat.id}
                 href={`/sheet/${sheetId}/settings/category/${cat.id}/edit`}
+                className="block"
               >
-                <Card className="overflow-hidden border-none shadow-sm bg-card hover:bg-accent/5 transition-colors cursor-pointer">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between gap-4">
+                <Card className="overflow-hidden shadow-sm cursor-pointer hover:shadow-lg transition-all duration-300">
+                  <CardContent className="px-4 flex justify-between items-center">
+                    <div className="flex w-full items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Icon className="h-5 w-5 text-primary" />
+                        <div
+                          className={`h-10 w-10 rounded-full flex items-center justify-center text-xl ${
+                            isExpense
+                              ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                              : "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+                          }`}
+                        >
+                          {createElement(Icon, { className: "h-5 w-5" })}
                         </div>
                         <div>
-                          <div className="font-semibold">{cat.name}</div>
-                          <div className="text-xs text-muted-foreground capitalize">
+                          <div className="font-medium">{cat.name}</div>
+                          <div className="text-xs text-muted-foreground pb-1 capitalize">
                             {cat.type}
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
                         {cat.budget && (
-                          <div className="text-sm font-medium text-primary">
+                          <div
+                            className={`text-sm font-bold ${
+                              isExpense
+                                ? "text-red-600 dark:text-red-400"
+                                : "text-green-600 dark:text-green-400"
+                            }`}
+                          >
                             <FormattedAmount
                               amount={cat.budget}
                               showSign={false}

@@ -321,7 +321,7 @@ export default function RecurringTransactionForm({
               />
             </div>
 
-            <div className="pt-4 space-y-2">
+            <div className="pt-4 space-y-4">
               <SubmitButton disabled={isInvalidDay} mode={mode} />
               <Button variant="outline" className="w-full" asChild>
                 <Link href={`/sheet/${sheetId}/settings/recurring`}>
