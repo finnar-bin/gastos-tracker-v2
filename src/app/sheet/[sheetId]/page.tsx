@@ -19,7 +19,7 @@ export default async function SheetDashboardPage({
           <h1 className="text-2xl font-bold">{sheet.name}</h1>
           <p className="text-muted-foreground text-sm">Dashboard</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 md:hidden">
           <Link href="/sheet">
             <Button variant="outline" size="sm">
               Sheets

@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, PlusCircle, History, Settings, LayoutList } from "lucide-react";
+import {
+  Home,
+  PlusCircle,
+  History,
+  Settings,
+  LayoutList,
+  LogOut,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -54,45 +61,55 @@ export function DesktopNav({ sheetId }: DesktopNavProps) {
         </Link>
       </div>
 
-      <nav className="flex-1 px-4 space-y-1">
-        {navItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (pathname.startsWith(item.href + "/") &&
-              item.href !== `/sheet/${sheetId}`);
-          const isHomeExact =
-            item.name === "Dashboard" && pathname === `/sheet/${sheetId}`;
-          const finalActive =
-            item.name === "Dashboard" ? isHomeExact : isActive;
+      <nav className="flex-1 px-4 pb-4 flex flex-col">
+        <div className="space-y-1">
+          {navItems.map((item) => {
+            const isActive =
+              pathname === item.href ||
+              (pathname.startsWith(item.href + "/") &&
+                item.href !== `/sheet/${sheetId}`);
+            const isHomeExact =
+              item.name === "Dashboard" && pathname === `/sheet/${sheetId}`;
+            const finalActive =
+              item.name === "Dashboard" ? isHomeExact : isActive;
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
-                finalActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-              )}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.name}
-            </Link>
-          );
-        })}
-      </nav>
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                  finalActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.name}
+              </Link>
+            );
+          })}
+        </div>
 
-      <div className="p-4 border-t border-border mt-auto">
-        <Link href="/sheet">
-          <Button
-            variant="outline"
-            className="w-full justify-start text-muted-foreground"
+        <div className="mt-auto pt-4 border-t border-border space-y-1">
+          <Link
+            href="/sheet"
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           >
+            <LayoutList className="h-4 w-4" />
             Change Sheet
-          </Button>
-        </Link>
-      </div>
+          </Link>
+          <form action="/auth/signout" method="post">
+            <button
+              type="submit"
+              className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </button>
+          </form>
+        </div>
+      </nav>
     </aside>
   );
 }
