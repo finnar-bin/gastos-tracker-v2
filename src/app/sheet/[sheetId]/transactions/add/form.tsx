@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { addTransaction } from "./actions";
 import {
   updateTransaction,
@@ -37,6 +38,7 @@ interface Category {
   id: string;
   name: string;
   icon: string;
+  defaultAmount?: string | null;
 }
 
 interface PaymentType {
@@ -76,6 +78,15 @@ export default function TransactionForm({
   const isExpense = type === "expense";
   const titlePrefix = mode === "edit" ? "Edit" : "Add";
   const formAction = mode === "edit" ? updateTransaction : addTransaction;
+  const [amount, setAmount] = useState(initialData?.amount ?? "");
+
+  const handleCategoryChange = (categoryId: string) => {
+    if (mode !== "add") return;
+    const category = categories.find((item) => item.id === categoryId);
+    if (category?.defaultAmount) {
+      setAmount(category.defaultAmount);
+    }
+  };
 
   return (
     <Card className="w-full">
@@ -116,24 +127,11 @@ export default function TransactionForm({
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
-              <Input
-                id="amount"
-                name="amount"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                defaultValue={initialData?.amount}
-                required
-                autoFocus
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="categoryId">Category</Label>
               <Select
                 name="categoryId"
                 defaultValue={initialData?.categoryId}
+                onValueChange={handleCategoryChange}
                 required
               >
                 <SelectTrigger>
@@ -153,6 +151,21 @@ export default function TransactionForm({
                   })}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount</Label>
+              <Input
+                id="amount"
+                name="amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+                required
+                autoFocus
+              />
             </div>
 
             {isExpense && (

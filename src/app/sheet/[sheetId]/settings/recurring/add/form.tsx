@@ -37,6 +37,8 @@ interface Category {
   id: string;
   name: string;
   icon: string;
+  type: "income" | "expense";
+  defaultAmount?: string | null;
 }
 
 interface PaymentType {
@@ -69,11 +71,21 @@ export default function RecurringTransactionForm({
   mode?: "add" | "edit";
   initialData?: RecurringTransactionData;
 }) {
+  const initialType = initialData?.type ?? "expense";
+  const initialTypeCategories = categories.filter(
+    (category) => category.type === initialType,
+  );
   const [transactionType, setTransactionType] = useState<"income" | "expense">(
-    initialData?.type ?? "expense",
+    initialType,
   );
   const [frequency, setFrequency] = useState<string>(
     initialData?.frequency ?? "monthly",
+  );
+  const [amount, setAmount] = useState<string>(
+    initialData?.amount ?? initialTypeCategories[0]?.defaultAmount ?? "",
+  );
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
+    initialData?.categoryId ?? initialTypeCategories[0]?.id ?? "",
   );
   const [dayOfMonth, setDayOfMonth] = useState<string>(
     initialData?.dayOfMonth ?? "",
@@ -85,6 +97,48 @@ export default function RecurringTransactionForm({
   const formAction =
     mode === "edit" ? updateRecurringTransaction : addRecurringTransaction;
 
+  const filteredCategories = categories.filter(
+    (category) => category.type === transactionType,
+  );
+  const resolvedCategoryId = filteredCategories.some(
+    (category) => category.id === selectedCategoryId,
+  )
+    ? selectedCategoryId
+    : (filteredCategories[0]?.id ?? "");
+
+  const handleTypeChange = (value: string) => {
+    const nextType = value as "income" | "expense";
+    setTransactionType(nextType);
+
+    const nextCategories = categories.filter(
+      (category) => category.type === nextType,
+    );
+    const nextCategoryId = nextCategories.some(
+      (category) => category.id === selectedCategoryId,
+    )
+      ? selectedCategoryId
+      : (nextCategories[0]?.id ?? "");
+
+    setSelectedCategoryId(nextCategoryId);
+    if (mode === "add") {
+      const nextCategory = nextCategories.find(
+        (category) => category.id === nextCategoryId,
+      );
+      if (nextCategory?.defaultAmount) {
+        setAmount(nextCategory.defaultAmount);
+      }
+    }
+  };
+
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
+    if (mode !== "add") return;
+    const category = filteredCategories.find((item) => item.id === categoryId);
+    if (category?.defaultAmount) {
+      setAmount(category.defaultAmount);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -94,11 +148,12 @@ export default function RecurringTransactionForm({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {categories.length === 0 ? (
+        {filteredCategories.length === 0 ? (
           <div className="py-6 text-center space-y-4">
             <p className="text-muted-foreground">
-              You haven&apos;t created any categories for this sheet yet. You
-              need at least one category to set up a recurring transaction.
+              You haven&apos;t created any {transactionType} categories for this
+              sheet yet. You need at least one category to set up a recurring
+              transaction.
             </p>
             <Button asChild className="w-full">
               <Link href={`/sheet/${sheetId}/settings/category`}>
@@ -121,9 +176,7 @@ export default function RecurringTransactionForm({
               <Select
                 name="type"
                 value={transactionType}
-                onValueChange={(value) =>
-                  setTransactionType(value as "income" | "expense")
-                }
+                onValueChange={handleTypeChange}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
@@ -136,30 +189,18 @@ export default function RecurringTransactionForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
-              <Input
-                id="amount"
-                name="amount"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                defaultValue={initialData?.amount}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="categoryId">Category</Label>
               <Select
                 name="categoryId"
-                defaultValue={initialData?.categoryId}
+                value={resolvedCategoryId}
+                onValueChange={handleCategoryChange}
                 required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat) => {
+                  {filteredCategories.map((cat) => {
                     const Icon = getLucideIcon(cat.icon);
                     return (
                       <SelectItem key={cat.id} value={cat.id}>
@@ -172,6 +213,20 @@ export default function RecurringTransactionForm({
                   })}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount</Label>
+              <Input
+                id="amount"
+                name="amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+                required
+              />
             </div>
 
             {transactionType === "expense" && (
