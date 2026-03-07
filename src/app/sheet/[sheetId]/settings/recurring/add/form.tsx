@@ -69,6 +69,9 @@ export default function RecurringTransactionForm({
   mode?: "add" | "edit";
   initialData?: RecurringTransactionData;
 }) {
+  const [transactionType, setTransactionType] = useState<"income" | "expense">(
+    initialData?.type ?? "expense",
+  );
   const [frequency, setFrequency] = useState<string>(
     initialData?.frequency ?? "monthly",
   );
@@ -115,7 +118,13 @@ export default function RecurringTransactionForm({
 
             <div className="space-y-2">
               <Label htmlFor="type">Type</Label>
-              <Select name="type" defaultValue={initialData?.type ?? "expense"}>
+              <Select
+                name="type"
+                value={transactionType}
+                onValueChange={(value) =>
+                  setTransactionType(value as "income" | "expense")
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -165,31 +174,33 @@ export default function RecurringTransactionForm({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="paymentType">Payment Type</Label>
-              <Select
-                name="paymentType"
-                defaultValue={initialData?.paymentType}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select payment type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {paymentTypes.map((pt) => {
-                    const Icon = getLucideIcon(pt.icon);
-                    return (
-                      <SelectItem key={pt.id} value={pt.id}>
-                        <div className="flex items-center gap-2">
-                          {Icon && <Icon className="w-4 h-4" />}
-                          <span>{pt.name}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
+            {transactionType === "expense" && (
+              <div className="space-y-2">
+                <Label htmlFor="paymentType">Payment Type</Label>
+                <Select
+                  name="paymentType"
+                  defaultValue={initialData?.paymentType}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentTypes.map((pt) => {
+                      const Icon = getLucideIcon(pt.icon);
+                      return (
+                        <SelectItem key={pt.id} value={pt.id}>
+                          <div className="flex items-center gap-2">
+                            {Icon && <Icon className="w-4 h-4" />}
+                            <span>{pt.name}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="frequency">Frequency</Label>

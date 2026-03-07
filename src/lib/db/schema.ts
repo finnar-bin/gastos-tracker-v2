@@ -189,11 +189,9 @@ export const recurringTransactions = pgTable(
     categoryId: uuid("category_id")
       .notNull()
       .references(() => categories.id, { onDelete: "cascade" }),
-    paymentType: uuid("payment_type_id")
-      .notNull()
-      .references(() => paymentTypes.id, {
-        onDelete: "set null",
-      }),
+    paymentType: uuid("payment_type_id").references(() => paymentTypes.id, {
+      onDelete: "set null",
+    }),
     amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
     type: transactionTypeEnum("type").notNull(),
     description: text("description"),

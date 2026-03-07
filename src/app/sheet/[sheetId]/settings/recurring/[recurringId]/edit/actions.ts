@@ -19,9 +19,15 @@ export async function updateRecurringTransaction(formData: FormData) {
   const recurringId = formData.get("recurringId") as string;
   const sheetId = formData.get("sheetId") as string;
   const categoryId = formData.get("categoryId") as string;
-  const paymentType = formData.get("paymentType") as string;
   const amount = formData.get("amount") as string;
   const type = formData.get("type") as "income" | "expense";
+  const paymentTypeValue = formData.get("paymentType");
+  const paymentType =
+    type === "income"
+      ? null
+      : typeof paymentTypeValue === "string" && paymentTypeValue.length > 0
+        ? paymentTypeValue
+        : null;
   const description = formData.get("description") as string;
   const frequency = formData.get("frequency") as
     | "daily"
