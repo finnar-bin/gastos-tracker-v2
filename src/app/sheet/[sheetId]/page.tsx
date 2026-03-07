@@ -4,7 +4,13 @@ import { db } from "@/lib/db";
 import { categories, profiles, transactions } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Plus, Wallet, History, CreditCard, LayoutGrid } from "lucide-react";
+import {
+  Wallet,
+  History,
+  CreditCard,
+  LayoutGrid,
+  ChartLine,
+} from "lucide-react";
 import Link from "next/link";
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { getLucideIcon } from "@/lib/lucide-icons";
@@ -23,6 +29,12 @@ export default async function SheetDashboardPage({
     .toISOString()
     .slice(0, 10);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    .toISOString()
+    .slice(0, 10);
+  const yearStart = new Date(now.getFullYear(), 0, 1)
+    .toISOString()
+    .slice(0, 10);
+  const yearEnd = new Date(now.getFullYear(), 11, 31)
     .toISOString()
     .slice(0, 10);
 
@@ -45,6 +57,83 @@ export default async function SheetDashboardPage({
     monthlyTotals.find((row) => row.type === "income")?.total ?? "0";
   const expenseTotal =
     monthlyTotals.find((row) => row.type === "expense")?.total ?? "0";
+
+  const monthExpr = sql<number>`extract(month from ${transactions.date})::int`;
+  const yearlyTotals = await db
+    .select({
+      month: monthExpr,
+      type: transactions.type,
+      total: sql<string>`coalesce(sum(${transactions.amount}), 0)`,
+    })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.sheetId, sheetId),
+        gte(transactions.date, yearStart),
+        lte(transactions.date, yearEnd),
+      ),
+    )
+    .groupBy(monthExpr, transactions.type);
+
+  const chartData = Array.from({ length: 12 }, (_, i) => ({
+    month: i,
+    income: 0,
+    expense: 0,
+  }));
+
+  for (const row of yearlyTotals) {
+    const monthIndex = Number(row.month) - 1;
+    if (monthIndex < 0 || monthIndex > 11) continue;
+    const value = Number(row.total) || 0;
+    if (row.type === "income") {
+      chartData[monthIndex].income = value;
+    } else {
+      chartData[monthIndex].expense = value;
+    }
+  }
+
+  const chartMax = Math.max(
+    1,
+    ...chartData.flatMap((point) => [point.income, point.expense]),
+  );
+  const width = 640;
+  const height = 220;
+  const leftPad = 24;
+  const rightPad = 12;
+  const topPad = 12;
+  const bottomPad = 28;
+  const xStep = (width - leftPad - rightPad) / 11;
+  const yScale = (height - topPad - bottomPad) / chartMax;
+  const getPoint = (idx: number, value: number) => ({
+    x: leftPad + idx * xStep,
+    y: height - bottomPad - value * yScale,
+  });
+  const incomePath = chartData
+    .map((point, idx) => {
+      const { x, y } = getPoint(idx, point.income);
+      return `${idx === 0 ? "M" : "L"} ${x} ${y}`;
+    })
+    .join(" ");
+  const expensePath = chartData
+    .map((point, idx) => {
+      const { x, y } = getPoint(idx, point.expense);
+      return `${idx === 0 ? "M" : "L"} ${x} ${y}`;
+    })
+    .join(" ");
+  const monthLabels = [
+    "J",
+    "F",
+    "M",
+    "A",
+    "M",
+    "J",
+    "J",
+    "A",
+    "S",
+    "O",
+    "N",
+    "D",
+  ];
 
   const recentTransactions = await db
     .select({
@@ -112,32 +201,82 @@ export default async function SheetDashboardPage({
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-4">
-        <Link
-          href={`/sheet/${sheetId}/transactions/add?type=income`}
-          className="w-full"
-        >
-          <Button
-            variant="outline"
-            className="w-full h-24 flex flex-col gap-2 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-950 dark:hover:text-green-400 border-dashed"
-          >
-            <Plus className="h-6 w-6 text-green-500" />
-            <span className="font-medium">Income</span>
-          </Button>
-        </Link>
-        <Link
-          href={`/sheet/${sheetId}/transactions/add?type=expense`}
-          className="w-full"
-        >
-          <Button
-            variant="outline"
-            className="w-full h-24 flex flex-col gap-2 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400 border-dashed"
-          >
-            <Plus className="h-6 w-6 text-red-500" />
-            <span className="font-medium">Expense</span>
-          </Button>
-        </Link>
+      {/* Yearly Trend */}
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <ChartLine className="h-5 w-5" /> Year Trend
+          </h2>
+        </div>
+        <Card className="shadow-sm">
+          <CardContent>
+            <div className="flex items-center gap-4 text-xs mb-2">
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                <span className="text-muted-foreground">Income</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                <span className="text-muted-foreground">Expense</span>
+              </div>
+            </div>
+            <svg
+              viewBox={`0 0 ${width} ${height}`}
+              className="w-full h-44"
+              role="img"
+              aria-label={`Income and expense trend for ${now.getFullYear()}`}
+            >
+              <line
+                x1={leftPad}
+                y1={height - bottomPad}
+                x2={width - rightPad}
+                y2={height - bottomPad}
+                stroke="currentColor"
+                className="text-border"
+              />
+              <path
+                d={incomePath}
+                fill="none"
+                stroke="#22c55e"
+                strokeWidth="3"
+              />
+              <path
+                d={expensePath}
+                fill="none"
+                stroke="#ef4444"
+                strokeWidth="3"
+              />
+              {chartData.map((point, idx) => {
+                const incomePoint = getPoint(idx, point.income);
+                const expensePoint = getPoint(idx, point.expense);
+                return (
+                  <g key={idx}>
+                    <circle
+                      cx={incomePoint.x}
+                      cy={incomePoint.y}
+                      r="3.5"
+                      fill="#22c55e"
+                    />
+                    <circle
+                      cx={expensePoint.x}
+                      cy={expensePoint.y}
+                      r="3.5"
+                      fill="#ef4444"
+                    />
+                    <text
+                      x={incomePoint.x}
+                      y={height - 8}
+                      textAnchor="middle"
+                      className="fill-muted-foreground text-[11px]"
+                    >
+                      {monthLabels[idx]}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Recent Transactions */}
