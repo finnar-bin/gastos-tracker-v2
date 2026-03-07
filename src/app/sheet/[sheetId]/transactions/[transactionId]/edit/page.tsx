@@ -7,13 +7,30 @@ import { and, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import TransactionForm, { TransactionData } from "../../add/form";
 
+function getSafeReturnHref({
+  sheetId,
+  returnTo,
+}: {
+  sheetId: string;
+  returnTo?: string;
+}) {
+  const fallback = `/sheet/${sheetId}/history`;
+  if (!returnTo) return fallback;
+  if (returnTo.startsWith(`/sheet/${sheetId}`)) return returnTo;
+  return fallback;
+}
+
 export default async function EditTransactionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ sheetId: string; transactionId: string }>;
+  searchParams: Promise<{ returnTo?: string }>;
 }) {
   const { sheetId, transactionId } = await params;
+  const { returnTo } = await searchParams;
   const { user } = await requireSheetAccess(sheetId);
+  const backHref = getSafeReturnHref({ sheetId, returnTo });
 
   const [transaction] = await db
     .select()
@@ -59,7 +76,7 @@ export default async function EditTransactionPage({
       <Header
         title="Edit Transaction"
         sheetId={sheetId}
-        backHref={`/sheet/${sheetId}/history`}
+        backHref={backHref}
         icon={ArrowLeft}
       />
 
@@ -69,7 +86,7 @@ export default async function EditTransactionPage({
         paymentTypes={availablePaymentTypes}
         mode="edit"
         initialData={initialData}
-        cancelHref={`/sheet/${sheetId}/history`}
+        cancelHref={backHref}
       />
     </div>
   );

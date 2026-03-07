@@ -7,14 +7,10 @@ import {
   profiles,
 } from "@/lib/db/schema";
 import { desc, eq, and, gte, lte } from "drizzle-orm";
-import { History, LayoutGrid } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { History } from "lucide-react";
 import { HistoryFilter } from "./filter";
-import { getLucideIcon } from "@/lib/lucide-icons";
 import { Header } from "@/components/Header";
-import { UserAvatar } from "@/components/user-avatar";
-import { FormattedAmount } from "@/components/formatted-amount";
-import Link from "next/link";
+import { TransactionCard } from "@/components/transaction-card";
 
 export default async function HistoryPage({
   params,
@@ -89,6 +85,18 @@ export default async function HistoryPage({
     .where(and(...filterConditions))
     .orderBy(desc(transactions.date));
 
+  const returnParams = new URLSearchParams({
+    month: selectedMonth.toString(),
+    year: selectedYear.toString(),
+  });
+  if (selectedType) {
+    returnParams.set("type", selectedType);
+  }
+  if (selectedCategoryId) {
+    returnParams.set("categoryId", selectedCategoryId);
+  }
+  const returnTo = `/sheet/${sheetId}/history?${returnParams.toString()}`;
+
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 min-h-screen relative">
       <Header
@@ -121,67 +129,14 @@ export default async function HistoryPage({
             No transactions found for this period.
           </p>
         ) : (
-          txs.map((tx) => {
-            const CategoryIcon = getLucideIcon(tx.categoryIcon) || LayoutGrid;
-            const PaymentIcon = tx.paymentTypeIcon
-              ? getLucideIcon(tx.paymentTypeIcon)
-              : null;
-            const creatorName =
-              tx.creatorDisplayName || tx.creatorEmail || "Unknown user";
-            return (
-              <Link
-                key={tx.id}
-                href={`/sheet/${sheetId}/transactions/${tx.id}/edit`}
-                className="block"
-              >
-                <Card className="overflow-hidden shadow-sm cursor-pointer hover:shadow-lg transition-all duration-300">
-                  <CardContent className="px-4 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`h-10 w-10 rounded-full flex items-center justify-center text-xl ${
-                          tx.type === "expense"
-                            ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                            : "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-                        }`}
-                      >
-                        <CategoryIcon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="font-medium capitalize flex items-center gap-2">
-                          {tx.description || tx.categoryName}
-                          {PaymentIcon && (
-                            <span
-                              className="bg-secondary text-secondary-foreground p-1 rounded-md"
-                              title={tx.paymentTypeName || "Payment Method"}
-                            >
-                              <PaymentIcon className="w-3 h-3" />
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-xs text-muted-foreground pb-1">
-                          {new Date(tx.date).toLocaleDateString()}
-                        </p>
-                        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <UserAvatar
-                            email={tx.creatorEmail}
-                            displayName={tx.creatorDisplayName}
-                            avatarUrl={tx.creatorAvatarUrl}
-                            size="xs"
-                          />
-                          <span>{creatorName}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div
-                      className={`font-bold ${tx.type === "expense" ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}
-                    >
-                      <FormattedAmount amount={tx.amount} type={tx.type} />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })
+          txs.map((tx) => (
+            <TransactionCard
+              key={tx.id}
+              sheetId={sheetId}
+              tx={tx}
+              returnTo={returnTo}
+            />
+          ))
         )}
       </div>
     </div>

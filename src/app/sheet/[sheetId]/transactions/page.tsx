@@ -8,6 +8,7 @@ import { getLucideIcon } from "@/lib/lucide-icons";
 import { LayoutGrid, LayoutList } from "lucide-react";
 import { Header } from "@/components/Header";
 import { TransactionsFilter } from "./filter";
+import Link from "next/link";
 
 function toIsoDate(value: Date): string {
   return value.toISOString().slice(0, 10);
@@ -94,29 +95,40 @@ export default async function YearOverviewPage({
         ) : (
           categoryTotals.map((category) => {
             const Icon = getLucideIcon(category.icon) || LayoutGrid;
+            const params = new URLSearchParams({
+              month: selectedMonth.toString(),
+              year: selectedYear.toString(),
+              type: selectedType,
+            });
             return (
-              <Card key={category.id} className="shadow-sm">
-                <CardContent className="p-4 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`h-10 w-10 rounded-full flex items-center justify-center text-xl ${
-                        selectedType === "expense"
-                          ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                          : "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-                      }`}
-                    >
-                      <Icon className="h-5 w-5" />
+              <Link
+                key={category.id}
+                href={`/sheet/${sheetId}/transactions/${category.id}?${params.toString()}`}
+                className="block"
+              >
+                <Card className="shadow-sm cursor-pointer hover:shadow-md transition-shadow">
+                  <CardContent className="p-4 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`h-10 w-10 rounded-full flex items-center justify-center text-xl ${
+                          selectedType === "expense"
+                            ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                            : "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+                        }`}
+                      >
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <p className="font-medium">{category.name}</p>
                     </div>
-                    <p className="font-medium">{category.name}</p>
-                  </div>
-                  <div className="font-bold text-foreground">
-                    <FormattedAmount
-                      amount={category.totalAmount}
-                      showSign={false}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="font-bold text-foreground">
+                      <FormattedAmount
+                        amount={category.totalAmount}
+                        showSign={false}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })
         )}
