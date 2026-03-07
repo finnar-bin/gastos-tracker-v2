@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 type TabHeaderItem = {
@@ -12,12 +12,12 @@ type TabHeaderItem = {
 export function TabHeader({
   items,
   value,
-  onChange,
+  onChangeAction,
   className,
 }: {
   items: TabHeaderItem[];
   value: string;
-  onChange: (value: string) => void;
+  onChangeAction: (value: string) => void;
   className?: string;
 }) {
   return (
@@ -29,7 +29,7 @@ export function TabHeader({
             <button
               key={item.value}
               type="button"
-              onClick={() => onChange(item.value)}
+              onClick={() => onChangeAction(item.value)}
               className={cn(
                 "flex-1 px-4 h-10 rounded-t-lg border border-transparent text-sm font-medium flex items-center justify-center gap-2 transition-colors",
                 isActive

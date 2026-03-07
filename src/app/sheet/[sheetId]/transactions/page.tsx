@@ -9,6 +9,10 @@ import { LayoutGrid, LayoutList } from "lucide-react";
 import { Header } from "@/components/Header";
 import { TransactionsFilter } from "./filter";
 
+function toIsoDate(value: Date): string {
+  return value.toISOString().slice(0, 10);
+}
+
 export default async function YearOverviewPage({
   params,
   searchParams,
@@ -39,12 +43,8 @@ export default async function YearOverviewPage({
   const selectedType =
     type === "income" || type === "expense" ? type : "expense";
 
-  const startDate = new Date(selectedYear, selectedMonth, 1)
-    .toISOString()
-    .split("T")[0];
-  const endDate = new Date(selectedYear, selectedMonth + 1, 0)
-    .toISOString()
-    .split("T")[0];
+  const startDate = toIsoDate(new Date(selectedYear, selectedMonth, 1));
+  const endDate = toIsoDate(new Date(selectedYear, selectedMonth + 1, 0));
 
   const categoryTotals = await db
     .select({
@@ -71,7 +71,7 @@ export default async function YearOverviewPage({
     .orderBy(categories.name);
 
   return (
-    <div className="container max-w-md mx-auto p-4 h-[100dvh] flex flex-col gap-6 overflow-hidden">
+    <div className="container max-w-md mx-auto p-4 h-dvh flex flex-col gap-6 overflow-hidden">
       <Header
         title="Transactions"
         sheetId={sheetId}

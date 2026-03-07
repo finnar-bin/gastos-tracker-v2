@@ -100,7 +100,7 @@ export function TransactionsFilter({
 
       <TabHeader
         value={type}
-        onChange={(value) =>
+        onChangeAction={(value) =>
           navigateWithFilters({ nextType: value as "income" | "expense" })
         }
         items={[
