@@ -8,6 +8,7 @@ import {
   History,
   Settings,
   LayoutList,
+  Layers2,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -52,7 +53,7 @@ export function DesktopNav({ sheetId }: DesktopNavProps) {
       <div className="px-4 pb-6">
         <Link href={`/sheet/${sheetId}/transactions/add`}>
           <Button
-            className="w-full justify-start gap-2 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 dark:hover:bg-emerald-700"
+            className="w-full justify-start gap-2 shadow-sm outline-solid outline-2 outline-emerald-700 bg-emerald-100 hover:bg-emerald-200 hover:text-emerald-900 text-emerald-700"
             size="lg"
           >
             <PlusCircle className="h-5 w-5" />
@@ -96,7 +97,7 @@ export function DesktopNav({ sheetId }: DesktopNavProps) {
             href="/sheet"
             className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           >
-            <LayoutList className="h-4 w-4" />
+            <Layers2 className="h-4 w-4" />
             Change Sheet
           </Link>
           <form action="/auth/signout" method="post">
