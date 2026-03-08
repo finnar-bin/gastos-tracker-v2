@@ -55,6 +55,15 @@ export const sheets = pgTable("sheets", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const sheetSettings = pgTable("sheet_settings", {
+  sheetId: uuid("sheet_id")
+    .primaryKey()
+    .references(() => sheets.id, { onDelete: "cascade" }),
+  currency: text("currency").notNull().default("USD"),
+  updatedBy: uuid("updated_by").notNull(), // Links to auth.users
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const sheetUsers = pgTable(
   "sheet_users",
   {

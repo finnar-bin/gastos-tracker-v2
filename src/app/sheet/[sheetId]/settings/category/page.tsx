@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { Header } from "@/components/Header";
 import { FormattedAmount } from "@/components/formatted-amount";
+import { getSheetCurrency } from "@/lib/sheet-settings";
 
 export default async function CategorySettingsPage({
   params,
@@ -18,6 +19,7 @@ export default async function CategorySettingsPage({
 }) {
   const { sheetId } = await params;
   await requireSheetAccess(sheetId);
+  const sheetCurrency = await getSheetCurrency(sheetId);
 
   const categoryList = await db
     .select()
@@ -97,6 +99,7 @@ export default async function CategorySettingsPage({
                             <FormattedAmount
                               amount={cat.budget}
                               showSign={false}
+                              currency={sheetCurrency}
                             />{" "}
                             budget
                           </div>

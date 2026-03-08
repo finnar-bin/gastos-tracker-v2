@@ -16,6 +16,7 @@ import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { FormattedAmount } from "@/components/formatted-amount";
 import { UserAvatar } from "@/components/user-avatar";
+import { getSheetCurrency } from "@/lib/sheet-settings";
 
 export default async function SheetDashboardPage({
   params,
@@ -24,6 +25,7 @@ export default async function SheetDashboardPage({
 }) {
   const { sheetId } = await params;
   const { sheet } = await requireSheetAccess(sheetId);
+  const sheetCurrency = await getSheetCurrency(sheetId);
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
     .toISOString()
@@ -188,13 +190,21 @@ export default async function SheetDashboardPage({
             <div className="flex items-center justify-between text-sm">
               <span className="opacity-80 text-lg">Total Income</span>
               <span className="font-bold text-lg">
-                <FormattedAmount amount={incomeTotal} type="income" />
+                <FormattedAmount
+                  amount={incomeTotal}
+                  type="income"
+                  currency={sheetCurrency}
+                />
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="opacity-80 text-lg">Total Expenses</span>
               <span className="font-bold text-lg">
-                <FormattedAmount amount={expenseTotal} type="expense" />
+                <FormattedAmount
+                  amount={expenseTotal}
+                  type="expense"
+                  currency={sheetCurrency}
+                />
               </span>
             </div>
           </div>
@@ -346,7 +356,11 @@ export default async function SheetDashboardPage({
                             : "text-green-600 dark:text-green-400"
                         }`}
                       >
-                        <FormattedAmount amount={tx.amount} type={tx.type} />
+                        <FormattedAmount
+                          amount={tx.amount}
+                          type={tx.type}
+                          currency={sheetCurrency}
+                        />
                       </div>
                     </div>
                   );

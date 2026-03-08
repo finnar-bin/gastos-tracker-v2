@@ -20,6 +20,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { Header } from "@/components/Header";
 import { FormattedAmount } from "@/components/formatted-amount";
+import { getSheetCurrency } from "@/lib/sheet-settings";
 
 export default async function RecurringTransactionsPage({
   params,
@@ -28,6 +29,7 @@ export default async function RecurringTransactionsPage({
 }) {
   const { sheetId } = await params;
   await requireSheetAccess(sheetId);
+  const sheetCurrency = await getSheetCurrency(sheetId);
 
   const recurringList = await db
     .select({
@@ -134,7 +136,11 @@ export default async function RecurringTransactionsPage({
                               : "text-green-600 dark:text-green-400"
                           }`}
                         >
-                          <FormattedAmount amount={rt.amount} type={rt.type} />
+                          <FormattedAmount
+                            amount={rt.amount}
+                            type={rt.type}
+                            currency={sheetCurrency}
+                          />
                         </div>
                         <div className="text-[10px] text-muted-foreground flex items-center justify-end gap-1">
                           <CreditCard className="h-3 w-3" />

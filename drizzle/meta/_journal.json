@@ -92,6 +92,13 @@
       "when": 1772880000000,
       "tag": "0012_optional_recurring_payment_type_for_income",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1772960000000,
+      "tag": "0013_sheet_settings",
+      "breakpoints": true
     }
   ]
 }

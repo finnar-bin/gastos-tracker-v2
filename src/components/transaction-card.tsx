@@ -25,10 +25,12 @@ export function TransactionCard({
   sheetId,
   tx,
   returnTo,
+  currency,
 }: {
   sheetId: string;
   tx: TransactionHistoryCardData;
   returnTo?: string;
+  currency?: string;
 }) {
   const categoryIcon = getLucideIcon(tx.categoryIcon) || LayoutGrid;
   const paymentIcon = tx.paymentTypeIcon
@@ -88,7 +90,11 @@ export function TransactionCard({
           <div
             className={`font-bold ${tx.type === "expense" ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}
           >
-            <FormattedAmount amount={tx.amount} type={tx.type} />
+            <FormattedAmount
+              amount={tx.amount}
+              type={tx.type}
+              currency={currency}
+            />
           </div>
         </CardContent>
       </Card>

@@ -6,12 +6,14 @@ type FormattedAmountProps = {
   amount: number | string | null | undefined;
   type?: "income" | "expense";
   showSign?: boolean;
+  currency?: string;
 };
 
 export function FormattedAmount({
   amount,
   type,
   showSign = true,
+  currency,
 }: FormattedAmountProps) {
   const numericAmount =
     typeof amount === "number" ? amount : Number.parseFloat(amount ?? "");
@@ -27,7 +29,7 @@ export function FormattedAmount({
   return (
     <>
       {sign}
-      {formatAmount(absoluteAmount)}
+      {formatAmount(absoluteAmount, { currency })}
     </>
   );
 }

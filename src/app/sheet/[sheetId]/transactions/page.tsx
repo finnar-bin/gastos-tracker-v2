@@ -9,6 +9,7 @@ import { LayoutGrid, LayoutList } from "lucide-react";
 import { Header } from "@/components/Header";
 import { TransactionsFilter } from "./filter";
 import Link from "next/link";
+import { getSheetCurrency } from "@/lib/sheet-settings";
 
 function toIsoDate(value: Date): string {
   return value.toISOString().slice(0, 10);
@@ -28,6 +29,7 @@ export default async function YearOverviewPage({
   const { sheetId } = await params;
   const { month, year, type } = await searchParams;
   await requireSheetAccess(sheetId);
+  const sheetCurrency = await getSheetCurrency(sheetId);
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -124,6 +126,7 @@ export default async function YearOverviewPage({
                       <FormattedAmount
                         amount={category.totalAmount}
                         showSign={false}
+                        currency={sheetCurrency}
                       />
                     </div>
                   </CardContent>

@@ -11,6 +11,7 @@ import { History } from "lucide-react";
 import { HistoryFilter } from "./filter";
 import { Header } from "@/components/Header";
 import { TransactionCard } from "@/components/transaction-card";
+import { getSheetCurrency } from "@/lib/sheet-settings";
 
 export default async function HistoryPage({
   params,
@@ -26,6 +27,7 @@ export default async function HistoryPage({
 }) {
   const { sheetId } = await params;
   const { user } = await requireSheetAccess(sheetId);
+  const sheetCurrency = await getSheetCurrency(sheetId);
   const { month, year, type, categoryId } = await searchParams;
 
   const currentYear = new Date().getFullYear();
@@ -135,6 +137,7 @@ export default async function HistoryPage({
               sheetId={sheetId}
               tx={tx}
               returnTo={returnTo}
+              currency={sheetCurrency}
             />
           ))
         )}

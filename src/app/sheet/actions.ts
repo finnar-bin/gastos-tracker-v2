@@ -4,7 +4,12 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
-import { sheets, sheetUsers, paymentTypes } from "@/lib/db/schema";
+import {
+  sheets,
+  sheetUsers,
+  paymentTypes,
+  sheetSettings,
+} from "@/lib/db/schema";
 
 export async function createSheet(formData: FormData) {
   const supabase = await createClient();
@@ -53,6 +58,12 @@ export async function createSheet(formData: FormData) {
         createdBy: user.id,
       },
     ]);
+
+    await db.insert(sheetSettings).values({
+      sheetId: newSheet.id,
+      currency: "USD",
+      updatedBy: user.id,
+    });
 
     revalidatePath("/sheet");
     return { success: true };

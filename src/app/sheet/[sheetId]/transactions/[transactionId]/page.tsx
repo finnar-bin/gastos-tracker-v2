@@ -12,6 +12,7 @@ import {
 import { Header } from "@/components/Header";
 import { TransactionCard } from "@/components/transaction-card";
 import { getLucideIcon } from "@/lib/lucide-icons";
+import { getSheetCurrency } from "@/lib/sheet-settings";
 
 function toIsoDate(value: Date): string {
   return value.toISOString().slice(0, 10);
@@ -31,6 +32,7 @@ export default async function CategoryTransactionsPage({
   const { sheetId, transactionId } = await params;
   const { month, year, type } = await searchParams;
   await requireSheetAccess(sheetId);
+  const sheetCurrency = await getSheetCurrency(sheetId);
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -123,6 +125,7 @@ export default async function CategoryTransactionsPage({
               sheetId={sheetId}
               tx={tx}
               returnTo={returnTo}
+              currency={sheetCurrency}
             />
           ))
         )}

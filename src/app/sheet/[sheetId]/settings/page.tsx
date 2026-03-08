@@ -1,5 +1,12 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
-import { Settings, PlusCircle, Key, Repeat, Users } from "lucide-react";
+import {
+  Settings,
+  PlusCircle,
+  Key,
+  Repeat,
+  Users,
+  SlidersHorizontal,
+} from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 
@@ -45,6 +52,13 @@ export default async function SettingsPage({
             >
               <Users className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               Manage Users
+            </Link>{" "}
+            <Link
+              href={`/sheet/${sheetId}/settings/general`}
+              className="group flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
+            >
+              <SlidersHorizontal className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              General Settings
             </Link>
           </div>
         </section>
