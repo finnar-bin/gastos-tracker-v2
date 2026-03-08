@@ -2,7 +2,7 @@ import { requireSheetAccess } from "@/lib/auth/sheets";
 import {
   Settings,
   PlusCircle,
-  Key,
+  // Key,
   Repeat,
   Users,
   SlidersHorizontal,
@@ -71,7 +71,8 @@ export default async function SettingsPage({
           </div>
         </section>
 
-        <section className="space-y-4">
+        {/* TODO: Implement this in the future */}
+        {/*<section className="space-y-4">
           <h2 className="text-lg font-semibold border-b pb-2">
             Profile Settings
           </h2>
@@ -84,7 +85,7 @@ export default async function SettingsPage({
               Update Password
             </Link>
           </div>
-        </section>
+        </section>*/}
       </div>
     </div>
   );

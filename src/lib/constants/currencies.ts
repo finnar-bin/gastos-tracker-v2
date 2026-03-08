@@ -41,4 +41,6 @@ export const CURRENCIES = [
   { code: "HUF", name: "Hungarian Forint" },
 ] as const;
 
-export const CURRENCY_CODES = new Set(CURRENCIES.map((currency) => currency.code));
+export const CURRENCY_CODES: ReadonlySet<string> = new Set(
+  CURRENCIES.map((currency) => currency.code),
+);

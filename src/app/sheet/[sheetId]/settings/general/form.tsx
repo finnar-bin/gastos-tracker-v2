@@ -8,16 +8,29 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/loading-button";
 import { CURRENCIES } from "@/lib/constants/currencies";
-import { upsertSheetCurrency } from "./actions";
+import { deleteSheet, upsertSheetCurrency } from "./actions";
 import { Settings2 } from "lucide-react";
 import { SearchableSelect } from "@/components/searchable-select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export function GeneralSettingsForm({
   sheetId,
   currentCurrency,
+  canDeleteSheet,
 }: {
   sheetId: string;
   currentCurrency: string;
+  canDeleteSheet: boolean;
 }) {
   const [loading, setLoading] = useState(false);
   const [currency, setCurrency] = useState(currentCurrency);
@@ -85,7 +98,48 @@ export function GeneralSettingsForm({
             </Button>
           </div>
         </form>
+
+        {canDeleteSheet && (
+          <div className="mt-8 pt-8 border-t">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full">
+                  Delete Sheet
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete
+                    this sheet and all associated data.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <form action={deleteSheet} className="mt-2 sm:mt-0">
+                    <input type="hidden" name="sheetId" value={sheetId} />
+                    <DeleteButton />
+                  </form>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+function DeleteButton() {
+  return (
+    <AlertDialogAction asChild variant="destructive">
+      <LoadingButton
+        type="submit"
+        variant="destructive"
+        text="Confirm Delete"
+        loadingText="Deleting..."
+      />
+    </AlertDialogAction>
   );
 }
