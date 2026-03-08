@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { and, eq, isNotNull, lte } from "drizzle-orm";
-import webpush from "web-push";
 import { db } from "@/lib/db";
 import {
   categories,
@@ -115,6 +114,7 @@ export async function GET(request: Request) {
     );
   }
 
+  const webpush = (await import("web-push")).default;
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
   const today = new Date().toISOString().split("T")[0];

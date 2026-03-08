@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
-import webpush from "web-push";
 import { db } from "@/lib/db";
 import { pushSubscriptions } from "@/lib/db/schema";
 import { createClient } from "@/lib/supabase/server";
@@ -34,6 +33,7 @@ export async function POST() {
     );
   }
 
+  const webpush = (await import("web-push")).default;
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
   const subscriptions = await db
