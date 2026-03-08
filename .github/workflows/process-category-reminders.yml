@@ -14,7 +14,7 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           # TODO: update this URL to the actual production domain
-          API_URL: https://gastos.example.com/api/cron/process-category-reminders
+          API_URL: https://gastos.nardoesweb.work/api/cron/process-category-reminders
         run: |
           echo "Triggering API route: $API_URL"
 
