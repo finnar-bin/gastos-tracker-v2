@@ -4,6 +4,9 @@ import { profiles } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 function isValidIanaTimeZone(value: string) {
   try {
     new Intl.DateTimeFormat("en-US", { timeZone: value });
@@ -23,9 +26,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => null)) as
-    | { timeZone?: string }
-    | null;
+  const body = (await request.json().catch(() => null)) as {
+    timeZone?: string;
+  } | null;
 
   const timeZone = body?.timeZone?.trim();
   if (!timeZone || !isValidIanaTimeZone(timeZone)) {

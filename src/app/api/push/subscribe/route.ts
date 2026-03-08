@@ -4,6 +4,9 @@ import { pushSubscriptions } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 type SubscriptionBody = {
   endpoint?: string;
   keys?: {
@@ -23,7 +26,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => null)) as SubscriptionBody | null;
+  const body = (await request
+    .json()
+    .catch(() => null)) as SubscriptionBody | null;
   const endpoint = body?.endpoint?.trim();
   const p256dh = body?.keys?.p256dh?.trim();
   const auth = body?.keys?.auth?.trim();
@@ -79,9 +84,9 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => null)) as
-    | { endpoint?: string }
-    | null;
+  const body = (await request.json().catch(() => null)) as {
+    endpoint?: string;
+  } | null;
   const endpoint = body?.endpoint?.trim();
 
   if (!endpoint) {

@@ -4,6 +4,9 @@ import { profiles } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET() {
   const supabase = await createClient();
   const {
