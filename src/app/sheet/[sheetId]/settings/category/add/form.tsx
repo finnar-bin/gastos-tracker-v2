@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { LayoutGrid } from "lucide-react";
+import { Info, LayoutGrid } from "lucide-react";
 import { IconPicker } from "@/components/icon-picker";
 
 export const AVAILABLE_ICONS = [
@@ -101,6 +101,7 @@ export type CategoryFormData = {
   budget: string | null;
   defaultAmount: string | null;
   dueDate: string | null;
+  dueReminderFrequency: "specific_date" | "daily" | "weekly" | "monthly" | null;
 };
 
 type CategoryFormProps = {
@@ -115,6 +116,9 @@ export default function CategoryForm({
   initialData,
 }: CategoryFormProps) {
   const [selectedIcon, setSelectedIcon] = useState(initialData?.icon ?? "");
+  const [dueReminderFrequency, setDueReminderFrequency] = useState<
+    "none" | "specific_date" | "daily" | "weekly" | "monthly"
+  >(initialData?.dueReminderFrequency ?? "none");
 
   const formAction = mode === "edit" ? updateCategory : addCategory;
 
@@ -196,8 +200,7 @@ export default function CategoryForm({
             />
           </div>
 
-          {/* TODO: Figure out a better way to notify the users, since this could be recurring */}
-          {/* <div className="space-y-2">
+          <div className="space-y-2">
             <Label htmlFor="dueDate">Due Date (Optional)</Label>
             <Input
               id="dueDate"
@@ -208,11 +211,44 @@ export default function CategoryForm({
             <div className="flex items-start gap-2 mt-1 text-[10px] text-muted-foreground">
               <Info className="h-3 w-3 mt-0.5" />
               <p>
-                Setting a date here would enable due date notification, you will
-                receive a notification every day 3 days before the set due date.
+                Due date reminders trigger at 8:00 AM in your local timezone.
               </p>
             </div>
-          </div> */}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dueReminderFrequency">Reminder Frequency</Label>
+            <Select
+              name="dueReminderFrequency"
+              value={dueReminderFrequency}
+              onValueChange={(value) =>
+                setDueReminderFrequency(
+                  value as
+                    | "none"
+                    | "specific_date"
+                    | "daily"
+                    | "weekly"
+                    | "monthly",
+                )
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="No reminder" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No reminder</SelectItem>
+                <SelectItem value="specific_date">
+                  Specific date only
+                </SelectItem>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-[10px] text-muted-foreground">
+              Choose how often you want to be reminded once a due date is set.
+            </p>
+          </div>
 
           <div className="pt-4 space-y-4">
             <SubmitButton disabled={!selectedIcon} mode={mode} />

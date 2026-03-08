@@ -29,6 +29,18 @@ export async function addCategory(formData: FormData) {
   const dueDate = formData.get("dueDate")
     ? (formData.get("dueDate") as string)
     : null;
+  const dueReminderFrequencyValue = formData.get("dueReminderFrequency");
+  const dueReminderFrequency =
+    typeof dueReminderFrequencyValue === "string" &&
+    dueReminderFrequencyValue !== "none"
+      ? (dueReminderFrequencyValue as
+          | "specific_date"
+          | "daily"
+          | "weekly"
+          | "monthly")
+      : null;
+  const resolvedDueReminderFrequency =
+    dueDate === null ? null : dueReminderFrequency;
 
   await requireSheetPermission(sheetId, "canAddCategory");
 
@@ -40,6 +52,8 @@ export async function addCategory(formData: FormData) {
     budget,
     defaultAmount,
     dueDate,
+    dueReminderFrequency: resolvedDueReminderFrequency,
+    dueLastNotifiedOn: null,
     createdBy: user.id,
   });
 

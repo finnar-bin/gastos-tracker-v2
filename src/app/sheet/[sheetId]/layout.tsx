@@ -1,5 +1,7 @@
 import { BottomBar } from "@/components/BottomBar";
 import { DesktopNav } from "@/components/DesktopNav";
+import { PushNotificationBootstrap } from "@/components/push-notification-bootstrap";
+import { TimeZoneSync } from "@/components/time-zone-sync";
 import { requireSheetAccess } from "@/lib/auth/sheets";
 
 export default async function SheetLayout({
@@ -13,6 +15,8 @@ export default async function SheetLayout({
   const { role } = await requireSheetAccess(sheetId);
   return (
     <div className="flex min-h-screen w-full">
+      <TimeZoneSync />
+      <PushNotificationBootstrap />
       <DesktopNav sheetId={sheetId} role={role} />
       <div className="flex-1 pb-16 md:pb-0 md:ml-64 w-full">{children}</div>
       <BottomBar sheetId={sheetId} role={role} />

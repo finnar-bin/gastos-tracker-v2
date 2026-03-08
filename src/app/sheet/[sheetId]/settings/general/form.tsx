@@ -30,6 +30,7 @@ export function GeneralSettingsForm({
   currentCurrency,
   currentName,
   currentDescription,
+  pushNotificationsEnabled,
   canEditSheetSettings,
   canDeleteSheet,
 }: {
@@ -37,11 +38,13 @@ export function GeneralSettingsForm({
   currentCurrency: string;
   currentName: string;
   currentDescription: string;
+  pushNotificationsEnabled: boolean;
   canEditSheetSettings: boolean;
   canDeleteSheet: boolean;
 }) {
   const [loading, setLoading] = useState(false);
   const [currency, setCurrency] = useState(currentCurrency);
+  const [pushEnabled, setPushEnabled] = useState(pushNotificationsEnabled);
 
   const currencyOptions = CURRENCIES.map((item) => ({
     value: item.code,
@@ -63,6 +66,23 @@ export function GeneralSettingsForm({
     }
 
     toast.success(result.success ?? "Saved");
+  }
+
+  async function sendTestNotification() {
+    const response = await fetch("/api/push/test", { method: "POST" });
+    const json = (await response.json().catch(() => null)) as {
+      error?: string;
+      sent?: number;
+    } | null;
+
+    if (!response.ok) {
+      toast.error(json?.error ?? "Failed to send test notification.");
+      return;
+    }
+
+    toast.success(
+      `Test notification sent${json?.sent ? ` (${json.sent})` : ""}.`,
+    );
   }
 
   return (
@@ -116,6 +136,28 @@ export function GeneralSettingsForm({
             </p>
           </div>
 
+          <div className="space-y-2">
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label htmlFor="pushNotificationsEnabled">
+                  Push Notifications
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Receive category due reminders on this device.
+                </p>
+              </div>
+              <input
+                id="pushNotificationsEnabled"
+                name="pushNotificationsEnabled"
+                type="checkbox"
+                className="h-4 w-4"
+                checked={pushEnabled}
+                onChange={(event) => setPushEnabled(event.target.checked)}
+                disabled={!canEditSheetSettings}
+              />
+            </div>
+          </div>
+
           <div className="pt-4 space-y-4">
             <LoadingButton
               type="submit"
@@ -126,6 +168,16 @@ export function GeneralSettingsForm({
               className="w-full"
               disabled={!canEditSheetSettings}
             />
+            {process.env.NODE_ENV === "development" && (
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                onClick={sendTestNotification}
+              >
+                Send Test Notification (Dev)
+              </Button>
+            )}
             <Button variant="outline" className="w-full" asChild>
               <Link href={`/sheet/${sheetId}/settings`}>Back to Settings</Link>
             </Button>

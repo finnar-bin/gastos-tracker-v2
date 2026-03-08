@@ -34,6 +34,7 @@ export default async function EditCategoryPage({
     budget: category.budget,
     defaultAmount: category.defaultAmount,
     dueDate: category.dueDate,
+    dueReminderFrequency: category.dueReminderFrequency,
   };
 
   return (

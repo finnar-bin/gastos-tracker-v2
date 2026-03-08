@@ -1,0 +1,23 @@
+name: Process Category Reminders
+
+on:
+  schedule:
+    # Runs every hour to guarantee 8:00 AM local-time delivery per timezone.
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit API Route
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          # TODO: update this URL to the actual production domain
+          API_URL: https://gastos.example.com/api/cron/process-category-reminders
+        run: |
+          echo "Triggering API route: $API_URL"
+
+          curl -f -i \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -X GET "$API_URL"

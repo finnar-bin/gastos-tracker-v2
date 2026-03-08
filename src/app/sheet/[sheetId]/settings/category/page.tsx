@@ -109,6 +109,11 @@ export default async function CategorySettingsPage({
                           Due: {new Date(cat.dueDate).toLocaleDateString()}
                         </div>
                       )}
+                      {cat.dueReminderFrequency && (
+                        <div className="text-[10px] text-muted-foreground capitalize">
+                          Reminder: {cat.dueReminderFrequency.replace("_", " ")}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>

@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
-import { sheetSettings, sheets } from "@/lib/db/schema";
+import { profiles, sheetSettings, sheets } from "@/lib/db/schema";
 import { CURRENCY_CODES } from "@/lib/constants/currencies";
 import { revalidatePath } from "next/cache";
 import { requireSheetAccess, requireSheetPermission } from "@/lib/auth/sheets";
@@ -29,6 +29,7 @@ export async function upsertSheetCurrency(formData: FormData) {
   const currencyRaw = formData.get("currency") as string;
   const nameRaw = formData.get("name") as string;
   const descriptionRaw = formData.get("description") as string;
+  const pushNotificationsEnabledRaw = formData.get("pushNotificationsEnabled");
 
   if (!sheetId) {
     return { error: "Invalid sheet." };
@@ -42,6 +43,7 @@ export async function upsertSheetCurrency(formData: FormData) {
   const currency = normalizeCurrency(currencyRaw);
   const name = nameRaw?.trim();
   const description = descriptionRaw?.trim() ? descriptionRaw.trim() : null;
+  const pushNotificationsEnabled = pushNotificationsEnabledRaw === "on";
 
   if (!name) {
     return { error: "Sheet name is required." };
@@ -72,6 +74,25 @@ export async function upsertSheetCurrency(formData: FormData) {
       set: {
         currency,
         updatedBy: user.id,
+        updatedAt: new Date(),
+      },
+    });
+
+  await db
+    .insert(profiles)
+    .values({
+      id: user.id,
+      email: user.email ?? "",
+      displayName:
+        (user.user_metadata?.display_name as string | undefined) ?? null,
+      avatarUrl: (user.user_metadata?.avatar_url as string | undefined) ?? null,
+      pushNotificationsEnabled,
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: profiles.id,
+      set: {
+        pushNotificationsEnabled,
         updatedAt: new Date(),
       },
     });

@@ -19,6 +19,10 @@ export const profiles = pgTable(
     email: text("email").notNull(),
     displayName: text("display_name"),
     avatarUrl: text("avatar_url"),
+    timeZone: text("time_zone"),
+    pushNotificationsEnabled: boolean("push_notifications_enabled")
+      .notNull()
+      .default(true),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -38,6 +42,10 @@ export const recurringFrequencyEnum = pgEnum("recurring_frequency", [
   "monthly",
   "yearly",
 ]);
+export const categoryDueReminderFrequencyEnum = pgEnum(
+  "category_due_reminder_frequency",
+  ["specific_date", "daily", "weekly", "monthly"],
+);
 export const inviteStatusEnum = pgEnum("invite_status", [
   "pending",
   "accepted",
@@ -141,6 +149,10 @@ export const categories = pgTable(
       scale: 2,
     }),
     dueDate: date("due_date"),
+    dueReminderFrequency: categoryDueReminderFrequencyEnum(
+      "due_reminder_frequency",
+    ),
+    dueLastNotifiedOn: date("due_last_notified_on"),
     createdBy: uuid("created_by").notNull(), // Links to auth.users
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
@@ -225,5 +237,52 @@ export const recurringTransactions = pgTable(
     activeDueDateIdx: index("recurring_transactions_active_due_date_idx")
       .on(table.nextProcessDate)
       .where(sql`${table.isActive} = true`),
+  }),
+);
+
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull(),
+    endpoint: text("endpoint").notNull(),
+    p256dhKey: text("p256dh_key").notNull(),
+    authKey: text("auth_key").notNull(),
+    userAgent: text("user_agent"),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("push_subscriptions_user_id_idx").on(table.userId),
+    endpointUnique: uniqueIndex("push_subscriptions_endpoint_uq").on(
+      table.endpoint,
+    ),
+    activeUserIdx: index("push_subscriptions_user_active_idx").on(
+      table.userId,
+      table.isActive,
+    ),
+  }),
+);
+
+export const categoryReminderDeliveries = pgTable(
+  "category_reminder_deliveries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    categoryId: uuid("category_id")
+      .notNull()
+      .references(() => categories.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull(),
+    localDate: date("local_date").notNull(),
+    sentAt: timestamp("sent_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueUserCategoryDate: uniqueIndex(
+      "category_reminder_deliveries_user_category_date_uq",
+    ).on(table.userId, table.categoryId, table.localDate),
+    userDateIdx: index("category_reminder_deliveries_user_date_idx").on(
+      table.userId,
+      table.localDate,
+    ),
   }),
 );
