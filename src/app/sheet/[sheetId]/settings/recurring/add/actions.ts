@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { recurringTransactions } from "@/lib/db/schema";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requireSheetPermission } from "@/lib/auth/sheets";
 
 export async function addRecurringTransaction(formData: FormData) {
   const supabase = await createClient();
@@ -39,6 +40,8 @@ export async function addRecurringTransaction(formData: FormData) {
   if (frequency !== "monthly") {
     dayOfMonth = null;
   }
+
+  await requireSheetPermission(sheetId, "canAddRecurringTransaction");
 
   // Calculate initial nextProcessDate
   const now = new Date();

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { transactions } from "@/lib/db/schema";
+import { requireSheetPermission } from "@/lib/auth/sheets";
 
 export async function addTransaction(formData: FormData) {
   const supabase = await createClient();
@@ -27,6 +28,8 @@ export async function addTransaction(formData: FormData) {
       : null;
   const dateStr = formData.get("date") as string;
   const date = dateStr || new Date().toISOString().split("T")[0];
+
+  await requireSheetPermission(sheetId, "canAddTransaction");
 
   if (type === "expense" && !paymentType) {
     throw new Error("Payment type is required for expense transactions");

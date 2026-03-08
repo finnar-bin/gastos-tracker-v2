@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { paymentTypes } from "@/lib/db/schema";
+import { requireSheetPermission } from "@/lib/auth/sheets";
 
 export async function addPaymentType(formData: FormData) {
   const supabase = await createClient();
@@ -18,6 +19,8 @@ export async function addPaymentType(formData: FormData) {
   const sheetId = formData.get("sheetId") as string;
   const name = formData.get("name") as string;
   const icon = formData.get("icon") as string;
+
+  await requireSheetPermission(sheetId, "canAddPaymentType");
 
   await db.insert(paymentTypes).values({
     sheetId,

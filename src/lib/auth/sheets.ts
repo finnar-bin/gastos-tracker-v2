@@ -3,6 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { sheets, sheetUsers } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
+import {
+  getSheetPermissions,
+  hasSheetPermission,
+  type SheetPermission,
+} from "@/lib/auth/sheet-permissions";
 
 /**
  * Ensures the user is logged in and has access to the specified sheet.
@@ -25,6 +30,7 @@ export async function requireSheetAccess(sheetId: string) {
     .select({
       id: sheets.id,
       name: sheets.name,
+      role: sheetUsers.role,
     })
     .from(sheets)
     .innerJoin(sheetUsers, eq(sheets.id, sheetUsers.sheetId))
@@ -36,5 +42,23 @@ export async function requireSheetAccess(sheetId: string) {
     redirect("/sheet");
   }
 
-  return { user, sheet };
+  return {
+    user,
+    sheet,
+    role: sheet.role,
+    permissions: getSheetPermissions(sheet.role),
+  };
+}
+
+export async function requireSheetPermission(
+  sheetId: string,
+  permission: SheetPermission,
+) {
+  const access = await requireSheetAccess(sheetId);
+
+  if (!hasSheetPermission(access.role, permission)) {
+    redirect(`/sheet/${sheetId}`);
+  }
+
+  return access;
 }

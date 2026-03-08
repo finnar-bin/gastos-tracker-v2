@@ -1,4 +1,4 @@
-import { requireSheetAccess } from "@/lib/auth/sheets";
+import { requireSheetPermission } from "@/lib/auth/sheets";
 import { ArrowLeft } from "lucide-react";
 import { db } from "@/lib/db";
 import {
@@ -19,7 +19,7 @@ export default async function EditRecurringPage({
   params: Promise<{ sheetId: string; recurringId: string }>;
 }) {
   const { sheetId, recurringId } = await params;
-  await requireSheetAccess(sheetId);
+  await requireSheetPermission(sheetId, "canEditRecurringTransaction");
 
   const [recurring] = await db
     .select()

@@ -5,8 +5,7 @@ import { db } from "@/lib/db";
 import { sheetSettings, sheets } from "@/lib/db/schema";
 import { CURRENCY_CODES } from "@/lib/constants/currencies";
 import { revalidatePath } from "next/cache";
-import { requireSheetAccess } from "@/lib/auth/sheets";
-import { getSheetRoleForUser } from "@/lib/invite-service";
+import { requireSheetAccess, requireSheetPermission } from "@/lib/auth/sheets";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
@@ -35,7 +34,10 @@ export async function upsertSheetCurrency(formData: FormData) {
     return { error: "Invalid sheet." };
   }
 
-  await requireSheetAccess(sheetId);
+  const { permissions } = await requireSheetAccess(sheetId);
+  if (!permissions.canEditSheetSettings) {
+    return { error: "You do not have permission to update sheet settings." };
+  }
 
   const currency = normalizeCurrency(currencyRaw);
   const name = nameRaw?.trim();
@@ -94,12 +96,7 @@ export async function deleteSheet(formData: FormData): Promise<void> {
     return;
   }
 
-  await requireSheetAccess(sheetId);
-
-  const role = await getSheetRoleForUser(sheetId, user.id);
-  if (role !== "admin") {
-    return;
-  }
+  await requireSheetPermission(sheetId, "canDeleteSheet");
 
   const deleteResult = await db
     .delete(sheets)

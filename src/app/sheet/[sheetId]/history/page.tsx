@@ -26,7 +26,7 @@ export default async function HistoryPage({
   }>;
 }) {
   const { sheetId } = await params;
-  const { user } = await requireSheetAccess(sheetId);
+  const { permissions } = await requireSheetAccess(sheetId);
   const sheetCurrency = await getSheetCurrency(sheetId);
   const { month, year, type, categoryId } = await searchParams;
 
@@ -40,7 +40,6 @@ export default async function HistoryPage({
   const startDate = new Date(selectedYear, selectedMonth, 1);
   const endDate = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59);
   const filterConditions = [
-    eq(transactions.createdBy, user.id),
     eq(transactions.sheetId, sheetId),
     gte(transactions.date, startDate.toISOString().split("T")[0]),
     lte(transactions.date, endDate.toISOString().split("T")[0]),
@@ -138,6 +137,7 @@ export default async function HistoryPage({
               tx={tx}
               returnTo={returnTo}
               currency={sheetCurrency}
+              canEditTransaction={permissions.canEditTransaction}
             />
           ))
         )}

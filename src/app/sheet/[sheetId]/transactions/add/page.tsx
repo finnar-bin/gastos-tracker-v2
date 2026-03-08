@@ -16,7 +16,29 @@ export default async function AddTransactionPage({
   searchParams: Promise<{ type?: string }>;
 }) {
   const { sheetId } = await params;
-  const { sheet } = await requireSheetAccess(sheetId);
+  const { sheet, permissions } = await requireSheetAccess(sheetId);
+  if (!permissions.canAddTransaction) {
+    return (
+      <div className="container max-w-md mx-auto p-4 flex items-center justify-center min-h-[80vh]">
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ReceiptText className="h-4 w-4" />
+              Permission Required
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              You can view this sheet, but you cannot add transactions.
+            </p>
+            <Button variant="outline" className="w-full" asChild>
+              <Link href={`/sheet/${sheetId}`}>Back to Dashboard</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   const selectedSheetId = sheet.id;
 
   const { type: queryType } = await searchParams;

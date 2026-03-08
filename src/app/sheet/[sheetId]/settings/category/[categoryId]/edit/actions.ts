@@ -5,6 +5,7 @@ import { categories } from "@/lib/db/schema";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { eq, and } from "drizzle-orm";
+import { requireSheetPermission } from "@/lib/auth/sheets";
 
 export async function updateCategory(formData: FormData) {
   const supabase = await createClient();
@@ -30,6 +31,8 @@ export async function updateCategory(formData: FormData) {
   const dueDate = formData.get("dueDate")
     ? (formData.get("dueDate") as string)
     : null;
+
+  await requireSheetPermission(sheetId, "canEditCategory");
 
   await db
     .update(categories)
@@ -58,6 +61,8 @@ export async function deleteCategory(formData: FormData) {
 
   const categoryId = formData.get("categoryId") as string;
   const sheetId = formData.get("sheetId") as string;
+
+  await requireSheetPermission(sheetId, "canDeleteCategory");
 
   await db
     .delete(categories)

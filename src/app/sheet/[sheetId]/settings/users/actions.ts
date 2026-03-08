@@ -9,12 +9,12 @@ import {
   buildInviteUrl,
   generateInviteToken,
   getInviteExpiryDate,
-  getSheetRoleForUser,
   hashInviteToken,
   isValidRole,
   normalizeEmail,
 } from "@/lib/invite-service";
 import { sendSheetInviteEmail } from "@/lib/email/send-sheet-invite";
+import { requireSheetAccess } from "@/lib/auth/sheets";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -44,8 +44,8 @@ export async function createSheetInvite(formData: FormData) {
     return { error: "Invalid email format." };
   }
 
-  const inviterRole = await getSheetRoleForUser(sheetId, user.id);
-  if (inviterRole !== "admin") {
+  const { permissions } = await requireSheetAccess(sheetId);
+  if (!permissions.canManageUsers) {
     return { error: "Only sheet admins can send invites." };
   }
 
@@ -139,8 +139,8 @@ export async function revokeSheetInvite(formData: FormData): Promise<void> {
   const sheetId = formData.get("sheetId") as string;
   if (!inviteId || !sheetId) return;
 
-  const inviterRole = await getSheetRoleForUser(sheetId, user.id);
-  if (inviterRole !== "admin") {
+  const { permissions } = await requireSheetAccess(sheetId);
+  if (!permissions.canManageUsers) {
     return;
   }
 
@@ -170,8 +170,8 @@ export async function removeSheetUser(formData: FormData): Promise<void> {
   const targetUserId = formData.get("targetUserId") as string;
   if (!sheetId || !targetUserId) return;
 
-  const currentUserRole = await getSheetRoleForUser(sheetId, user.id);
-  if (currentUserRole !== "admin") {
+  const { permissions } = await requireSheetAccess(sheetId);
+  if (!permissions.canManageUsers) {
     return;
   }
 

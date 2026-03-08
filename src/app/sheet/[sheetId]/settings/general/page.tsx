@@ -5,7 +5,6 @@ import { sheetSettings, sheets } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { ArrowLeft } from "lucide-react";
 import { GeneralSettingsForm } from "./form";
-import { getSheetRoleForUser } from "@/lib/invite-service";
 
 export default async function GeneralSettingsPage({
   params,
@@ -13,7 +12,7 @@ export default async function GeneralSettingsPage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  const { user } = await requireSheetAccess(sheetId);
+  const { permissions } = await requireSheetAccess(sheetId);
 
   const settingsRows = await db
     .select({ currency: sheetSettings.currency })
@@ -22,8 +21,6 @@ export default async function GeneralSettingsPage({
     .limit(1);
 
   const currentCurrency = settingsRows[0]?.currency ?? "USD";
-  const role = await getSheetRoleForUser(sheetId, user.id);
-  const canDeleteSheet = role === "admin";
 
   const sheetRows = await db
     .select({ name: sheets.name, description: sheets.description })
@@ -48,7 +45,8 @@ export default async function GeneralSettingsPage({
         currentCurrency={currentCurrency}
         currentName={currentName}
         currentDescription={currentDescription}
-        canDeleteSheet={canDeleteSheet}
+        canEditSheetSettings={permissions.canEditSheetSettings}
+        canDeleteSheet={permissions.canDeleteSheet}
       />
     </div>
   );

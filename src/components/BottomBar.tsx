@@ -4,13 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, LayoutList, PlusCircle, History, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSheetPermissions } from "@/hooks/use-sheet-permissions";
+import { type SheetRole } from "@/lib/auth/sheet-permissions";
 
 interface BottomBarProps {
   sheetId: string;
+  role: SheetRole;
 }
 
-export function BottomBar({ sheetId }: BottomBarProps) {
+export function BottomBar({ sheetId, role }: BottomBarProps) {
   const pathname = usePathname();
+  const permissions = useSheetPermissions(role);
 
   const navItems = [
     {
@@ -23,12 +27,16 @@ export function BottomBar({ sheetId }: BottomBarProps) {
       href: `/sheet/${sheetId}/transactions`,
       icon: LayoutList,
     },
-    {
-      name: "Add",
-      href: `/sheet/${sheetId}/transactions/add`,
-      icon: PlusCircle,
-      isAction: true,
-    },
+    ...(permissions.canAddTransaction
+      ? [
+          {
+            name: "Add",
+            href: `/sheet/${sheetId}/transactions/add`,
+            icon: PlusCircle,
+            isAction: true,
+          },
+        ]
+      : []),
     {
       name: "History",
       href: `/sheet/${sheetId}/history`,

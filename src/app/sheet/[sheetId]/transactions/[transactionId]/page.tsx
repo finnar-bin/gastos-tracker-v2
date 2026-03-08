@@ -31,7 +31,7 @@ export default async function CategoryTransactionsPage({
 }) {
   const { sheetId, transactionId } = await params;
   const { month, year, type } = await searchParams;
-  await requireSheetAccess(sheetId);
+  const { permissions } = await requireSheetAccess(sheetId);
   const sheetCurrency = await getSheetCurrency(sheetId);
 
   const now = new Date();
@@ -126,6 +126,7 @@ export default async function CategoryTransactionsPage({
               tx={tx}
               returnTo={returnTo}
               currency={sheetCurrency}
+              canEditTransaction={permissions.canEditTransaction}
             />
           ))
         )}

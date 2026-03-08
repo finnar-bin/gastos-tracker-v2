@@ -1,4 +1,4 @@
-import { requireSheetAccess } from "@/lib/auth/sheets";
+import { requireSheetPermission } from "@/lib/auth/sheets";
 import { ArrowLeft } from "lucide-react";
 import CategoryForm from "../../add/form";
 import type { CategoryFormData } from "../../add/form";
@@ -14,7 +14,7 @@ export default async function EditCategoryPage({
   params: Promise<{ sheetId: string; categoryId: string }>;
 }) {
   const { sheetId, categoryId } = await params;
-  await requireSheetAccess(sheetId);
+  await requireSheetPermission(sheetId, "canEditCategory");
 
   const [category] = await db
     .select()

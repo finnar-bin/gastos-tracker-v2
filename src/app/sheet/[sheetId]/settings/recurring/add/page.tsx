@@ -1,4 +1,4 @@
-import { requireSheetAccess } from "@/lib/auth/sheets";
+import { requireSheetPermission } from "@/lib/auth/sheets";
 import { ArrowLeft } from "lucide-react";
 import { db } from "@/lib/db";
 import { categories, paymentTypes } from "@/lib/db/schema";
@@ -12,7 +12,7 @@ export default async function AddRecurringPage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  await requireSheetAccess(sheetId);
+  await requireSheetPermission(sheetId, "canAddRecurringTransaction");
 
   const availableCategories = await db
     .select()

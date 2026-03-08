@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { Header } from "@/components/Header";
-import { requireSheetAccess } from "@/lib/auth/sheets";
+import { requireSheetPermission } from "@/lib/auth/sheets";
 import PaymentTypeForm from "./form";
 
 export default async function AddPaymentTypePage({
@@ -9,7 +9,7 @@ export default async function AddPaymentTypePage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  await requireSheetAccess(sheetId);
+  await requireSheetPermission(sheetId, "canAddPaymentType");
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 pb-24">

@@ -17,15 +17,8 @@ export default async function ManageUsersPage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  const { user } = await requireSheetAccess(sheetId);
-
-  const currentUserRoleRows = await db
-    .select({ role: sheetUsers.role })
-    .from(sheetUsers)
-    .where(
-      and(eq(sheetUsers.sheetId, sheetId), eq(sheetUsers.userId, user.id)),
-    );
-  const canManageInvites = currentUserRoleRows[0]?.role === "admin";
+  const { user, permissions } = await requireSheetAccess(sheetId);
+  const canManageInvites = permissions.canManageUsers;
 
   const members = await db
     .select({

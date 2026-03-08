@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requireSheetPermission } from "@/lib/auth/sheets";
 
 export async function addCategory(formData: FormData) {
   const supabase = await createClient();
@@ -28,6 +29,8 @@ export async function addCategory(formData: FormData) {
   const dueDate = formData.get("dueDate")
     ? (formData.get("dueDate") as string)
     : null;
+
+  await requireSheetPermission(sheetId, "canAddCategory");
 
   await db.insert(categories).values({
     sheetId,

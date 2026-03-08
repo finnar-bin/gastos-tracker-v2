@@ -5,6 +5,7 @@ import { recurringTransactions } from "@/lib/db/schema";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { eq, and } from "drizzle-orm";
+import { requireSheetPermission } from "@/lib/auth/sheets";
 
 export async function updateRecurringTransaction(formData: FormData) {
   const supabase = await createClient();
@@ -41,6 +42,8 @@ export async function updateRecurringTransaction(formData: FormData) {
   if (frequency !== "monthly") {
     dayOfMonth = null;
   }
+
+  await requireSheetPermission(sheetId, "canEditRecurringTransaction");
 
   // Calculate initial nextProcessDate if frequency or dayOfMonth changed
   // For simplicity in this edit, we'll keep the existing nextProcessDate
@@ -111,6 +114,8 @@ export async function deleteRecurringTransaction(formData: FormData) {
 
   const recurringId = formData.get("recurringId") as string;
   const sheetId = formData.get("sheetId") as string;
+
+  await requireSheetPermission(sheetId, "canDeleteRecurringTransaction");
 
   await db
     .delete(recurringTransactions)

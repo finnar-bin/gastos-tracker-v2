@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { ArrowLeft } from "lucide-react";
 import { Header } from "@/components/Header";
-import { requireSheetAccess } from "@/lib/auth/sheets";
+import { requireSheetPermission } from "@/lib/auth/sheets";
 import { db } from "@/lib/db";
 import { paymentTypes } from "@/lib/db/schema";
 import PaymentTypeForm, { type PaymentTypeFormData } from "../../add/form";
@@ -13,7 +13,7 @@ export default async function EditPaymentTypePage({
   params: Promise<{ sheetId: string; paymentTypeId: string }>;
 }) {
   const { sheetId, paymentTypeId } = await params;
-  await requireSheetAccess(sheetId);
+  await requireSheetPermission(sheetId, "canEditPaymentType");
 
   const [paymentType] = await db
     .select()
@@ -45,7 +45,11 @@ export default async function EditPaymentTypePage({
         icon={ArrowLeft}
       />
 
-      <PaymentTypeForm sheetId={sheetId} mode="edit" initialData={initialData} />
+      <PaymentTypeForm
+        sheetId={sheetId}
+        mode="edit"
+        initialData={initialData}
+      />
     </div>
   );
 }

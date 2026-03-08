@@ -30,12 +30,14 @@ export function GeneralSettingsForm({
   currentCurrency,
   currentName,
   currentDescription,
+  canEditSheetSettings,
   canDeleteSheet,
 }: {
   sheetId: string;
   currentCurrency: string;
   currentName: string;
   currentDescription: string;
+  canEditSheetSettings: boolean;
   canDeleteSheet: boolean;
 }) {
   const [loading, setLoading] = useState(false);
@@ -82,6 +84,7 @@ export function GeneralSettingsForm({
               defaultValue={currentName}
               placeholder="e.g. Personal Budget"
               required
+              disabled={!canEditSheetSettings}
             />
           </div>
 
@@ -93,6 +96,7 @@ export function GeneralSettingsForm({
               defaultValue={currentDescription}
               placeholder="Add a short description (optional)"
               rows={3}
+              disabled={!canEditSheetSettings}
             />
           </div>
           <div className="space-y-2">
@@ -105,6 +109,7 @@ export function GeneralSettingsForm({
               placeholder="Select a currency"
               searchPlaceholder="Search currency..."
               emptyMessage="No currencies found."
+              disabled={!canEditSheetSettings}
             />
             <p className="text-xs text-muted-foreground">
               Search by code or name, then select a currency.
@@ -119,6 +124,7 @@ export function GeneralSettingsForm({
               loading={loading}
               trackFormStatus={false}
               className="w-full"
+              disabled={!canEditSheetSettings}
             />
             <Button variant="outline" className="w-full" asChild>
               <Link href={`/sheet/${sheetId}/settings`}>Back to Settings</Link>

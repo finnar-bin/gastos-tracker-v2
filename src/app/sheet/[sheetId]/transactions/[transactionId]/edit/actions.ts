@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { transactions } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
+import { requireSheetPermission } from "@/lib/auth/sheets";
 
 export async function updateTransaction(formData: FormData) {
   const supabase = await createClient();
@@ -30,6 +31,8 @@ export async function updateTransaction(formData: FormData) {
   const dateStr = formData.get("date") as string;
   const date = dateStr || new Date().toISOString().split("T")[0];
 
+  await requireSheetPermission(sheetId, "canEditTransaction");
+
   if (type === "expense" && !paymentType) {
     throw new Error("Payment type is required for expense transactions");
   }
@@ -50,7 +53,6 @@ export async function updateTransaction(formData: FormData) {
       and(
         eq(transactions.id, transactionId),
         eq(transactions.sheetId, sheetId),
-        eq(transactions.createdBy, user.id),
       ),
     );
 
@@ -70,13 +72,14 @@ export async function deleteTransaction(formData: FormData) {
   const transactionId = formData.get("transactionId") as string;
   const sheetId = formData.get("sheetId") as string;
 
+  await requireSheetPermission(sheetId, "canDeleteTransaction");
+
   await db
     .delete(transactions)
     .where(
       and(
         eq(transactions.id, transactionId),
         eq(transactions.sheetId, sheetId),
-        eq(transactions.createdBy, user.id),
       ),
     );
 

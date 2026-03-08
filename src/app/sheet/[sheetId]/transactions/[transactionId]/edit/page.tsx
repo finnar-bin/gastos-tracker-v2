@@ -1,4 +1,4 @@
-import { requireSheetAccess } from "@/lib/auth/sheets";
+import { requireSheetPermission } from "@/lib/auth/sheets";
 import { Header } from "@/components/Header";
 import { ArrowLeft } from "lucide-react";
 import { db } from "@/lib/db";
@@ -29,7 +29,7 @@ export default async function EditTransactionPage({
 }) {
   const { sheetId, transactionId } = await params;
   const { returnTo } = await searchParams;
-  const { user } = await requireSheetAccess(sheetId);
+  await requireSheetPermission(sheetId, "canEditTransaction");
   const backHref = getSafeReturnHref({ sheetId, returnTo });
 
   const [transaction] = await db
@@ -39,7 +39,6 @@ export default async function EditTransactionPage({
       and(
         eq(transactions.id, transactionId),
         eq(transactions.sheetId, sheetId),
-        eq(transactions.createdBy, user.id),
       ),
     );
 

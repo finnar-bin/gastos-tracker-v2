@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { paymentTypes } from "@/lib/db/schema";
+import { requireSheetPermission } from "@/lib/auth/sheets";
 
 export async function updatePaymentType(formData: FormData) {
   const supabase = await createClient();
@@ -20,6 +21,8 @@ export async function updatePaymentType(formData: FormData) {
   const sheetId = formData.get("sheetId") as string;
   const name = formData.get("name") as string;
   const icon = formData.get("icon") as string;
+
+  await requireSheetPermission(sheetId, "canEditPaymentType");
 
   await db
     .update(paymentTypes)
@@ -46,6 +49,8 @@ export async function deletePaymentType(formData: FormData) {
 
   const paymentTypeId = formData.get("paymentTypeId") as string;
   const sheetId = formData.get("sheetId") as string;
+
+  await requireSheetPermission(sheetId, "canDeletePaymentType");
 
   await db
     .delete(paymentTypes)

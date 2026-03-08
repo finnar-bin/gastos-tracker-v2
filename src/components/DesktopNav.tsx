@@ -13,13 +13,17 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useSheetPermissions } from "@/hooks/use-sheet-permissions";
+import { type SheetRole } from "@/lib/auth/sheet-permissions";
 
 interface DesktopNavProps {
   sheetId: string;
+  role: SheetRole;
 }
 
-export function DesktopNav({ sheetId }: DesktopNavProps) {
+export function DesktopNav({ sheetId, role }: DesktopNavProps) {
   const pathname = usePathname();
+  const permissions = useSheetPermissions(role);
 
   const navItems = [
     {
@@ -50,18 +54,20 @@ export function DesktopNav({ sheetId }: DesktopNavProps) {
         <h2 className="text-xl font-bold tracking-tight">Gastos Tracker</h2>
       </div>
 
-      <div className="px-4 pb-6">
-        <Link href={`/sheet/${sheetId}/transactions/add`}>
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-2 border-emerald-700 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-800"
-            size="lg"
-          >
-            <PlusCircle className="h-5 w-5" />
-            Add Transaction
-          </Button>
-        </Link>
-      </div>
+      {permissions.canAddTransaction && (
+        <div className="px-4 pb-6">
+          <Link href={`/sheet/${sheetId}/transactions/add`}>
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2 border-emerald-700 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-800"
+              size="lg"
+            >
+              <PlusCircle className="h-5 w-5" />
+              Add Transaction
+            </Button>
+          </Link>
+        </div>
+      )}
 
       <nav className="flex-1 px-4 pb-4 flex flex-col">
         <div className="space-y-1">
