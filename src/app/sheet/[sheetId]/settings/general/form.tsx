@@ -11,6 +11,8 @@ import { CURRENCIES } from "@/lib/constants/currencies";
 import { deleteSheet, upsertSheetCurrency } from "./actions";
 import { Settings2 } from "lucide-react";
 import { SearchableSelect } from "@/components/searchable-select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,10 +28,14 @@ import {
 export function GeneralSettingsForm({
   sheetId,
   currentCurrency,
+  currentName,
+  currentDescription,
   canDeleteSheet,
 }: {
   sheetId: string;
   currentCurrency: string;
+  currentName: string;
+  currentDescription: string;
   canDeleteSheet: boolean;
 }) {
   const [loading, setLoading] = useState(false);
@@ -68,6 +74,27 @@ export function GeneralSettingsForm({
         <form onSubmit={onSubmit} className="space-y-4">
           <input type="hidden" name="sheetId" value={sheetId} />
 
+          <div className="space-y-2">
+            <Label htmlFor="name">Sheet Name</Label>
+            <Input
+              id="name"
+              name="name"
+              defaultValue={currentName}
+              placeholder="e.g. Personal Budget"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              name="description"
+              defaultValue={currentDescription}
+              placeholder="Add a short description (optional)"
+              rows={3}
+            />
+          </div>
           <div className="space-y-2">
             <Label>Currency</Label>
             <SearchableSelect

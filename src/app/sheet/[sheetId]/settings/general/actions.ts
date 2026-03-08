@@ -28,6 +28,8 @@ export async function upsertSheetCurrency(formData: FormData) {
 
   const sheetId = formData.get("sheetId") as string;
   const currencyRaw = formData.get("currency") as string;
+  const nameRaw = formData.get("name") as string;
+  const descriptionRaw = formData.get("description") as string;
 
   if (!sheetId) {
     return { error: "Invalid sheet." };
@@ -36,10 +38,25 @@ export async function upsertSheetCurrency(formData: FormData) {
   await requireSheetAccess(sheetId);
 
   const currency = normalizeCurrency(currencyRaw);
+  const name = nameRaw?.trim();
+  const description = descriptionRaw?.trim() ? descriptionRaw.trim() : null;
+
+  if (!name) {
+    return { error: "Sheet name is required." };
+  }
 
   if (!currency || !CURRENCY_CODES.has(currency)) {
     return { error: "Please select a valid currency." };
   }
+
+  await db
+    .update(sheets)
+    .set({
+      name,
+      description,
+      updatedAt: new Date(),
+    })
+    .where(eq(sheets.id, sheetId));
 
   await db
     .insert(sheetSettings)
@@ -59,7 +76,7 @@ export async function upsertSheetCurrency(formData: FormData) {
 
   revalidatePath(`/sheet/${sheetId}`);
   revalidatePath(`/sheet/${sheetId}/settings/general`);
-  return { success: "Currency updated." };
+  return { success: "Settings updated." };
 }
 
 export async function deleteSheet(formData: FormData): Promise<void> {
