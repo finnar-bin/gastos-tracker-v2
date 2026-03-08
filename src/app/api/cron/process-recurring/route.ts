@@ -3,6 +3,9 @@ import { db } from "@/lib/db";
 import { recurringTransactions, transactions } from "@/lib/db/schema";
 import { lte, eq, and } from "drizzle-orm";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET(request: Request) {
   // 1. Secure the route against unauthorized triggers
   const authHeader = request.headers.get("authorization");

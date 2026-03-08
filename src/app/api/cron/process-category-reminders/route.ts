@@ -10,6 +10,9 @@ import {
   sheetUsers,
 } from "@/lib/db/schema";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 type ReminderFrequency = "specific_date" | "daily" | "weekly" | "monthly";
 
 function getLocalParts(date: Date, timeZone: string) {
