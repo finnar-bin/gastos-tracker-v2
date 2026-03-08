@@ -6,6 +6,7 @@ import {
   Repeat,
   Users,
   SlidersHorizontal,
+  WalletCards,
 } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/Header";
@@ -40,6 +41,13 @@ export default async function SettingsPage({
               Add Category
             </Link>
             <Link
+              href={`/sheet/${sheetId}/settings/general`}
+              className="group flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
+            >
+              <SlidersHorizontal className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              General Settings
+            </Link>
+            <Link
               href={`/sheet/${sheetId}/settings/recurring`}
               className="group flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
             >
@@ -47,18 +55,18 @@ export default async function SettingsPage({
               Recurring Transactions
             </Link>
             <Link
+              href={`/sheet/${sheetId}/settings/payment-types`}
+              className="group flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
+            >
+              <WalletCards className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              Payment Types
+            </Link>
+            <Link
               href={`/sheet/${sheetId}/settings/users`}
               className="group flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
             >
               <Users className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               Manage Users
-            </Link>{" "}
-            <Link
-              href={`/sheet/${sheetId}/settings/general`}
-              className="group flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
-            >
-              <SlidersHorizontal className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              General Settings
             </Link>
           </div>
         </section>

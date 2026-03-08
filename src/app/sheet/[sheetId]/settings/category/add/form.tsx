@@ -15,11 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -32,13 +27,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { LayoutGrid, SmilePlus } from "lucide-react";
-import { getLucideIcon } from "@/lib/lucide-icons";
-
-function renderLucideIcon(name: string, className: string) {
-  const Icon = getLucideIcon(name);
-  return Icon ? <Icon className={className} /> : null;
-}
+import { LayoutGrid } from "lucide-react";
+import { IconPicker } from "@/components/icon-picker";
 
 export const AVAILABLE_ICONS = [
   // Food & Drinks
@@ -125,7 +115,6 @@ export default function CategoryForm({
   initialData,
 }: CategoryFormProps) {
   const [selectedIcon, setSelectedIcon] = useState(initialData?.icon ?? "");
-  const [iconPickerOpen, setIconPickerOpen] = useState(false);
 
   const formAction = mode === "edit" ? updateCategory : addCategory;
 
@@ -157,55 +146,12 @@ export default function CategoryForm({
 
           <div className="space-y-2">
             <Label>Icon</Label>
-            <Popover open={iconPickerOpen} onOpenChange={setIconPickerOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  className={`w-full justify-start gap-2 h-9 border-2 border-black rounded-lg bg-card shadow-hard-sm px-3 py-1 text-base md:text-sm font-normal hover:bg-card hover:translate-x-0 hover:translate-y-0 hover:shadow-hard-sm ${selectedIcon ? "text-foreground" : "text-muted-foreground"}`}
-                >
-                  {selectedIcon ? (
-                    <>
-                      {renderLucideIcon(selectedIcon, "h-4 w-4")}
-                      <span>{selectedIcon}</span>
-                    </>
-                  ) : (
-                    <>
-                      <SmilePlus className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">
-                        Select an icon
-                      </span>
-                    </>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-70 p-2" align="start">
-                <div
-                  className="grid grid-cols-6 gap-1 overflow-y-auto"
-                  style={{ maxHeight: "calc(5 * 40px)" }}
-                >
-                  {AVAILABLE_ICONS.map((iconName) => {
-                    return (
-                      <button
-                        key={iconName}
-                        type="button"
-                        onClick={() => {
-                          setSelectedIcon(iconName);
-                          setIconPickerOpen(false);
-                        }}
-                        className={`p-2 flex items-center justify-center rounded-md hover:bg-accent transition-colors ${
-                          selectedIcon === iconName
-                            ? "bg-primary/20 ring-2 ring-primary"
-                            : ""
-                        }`}
-                        title={iconName}
-                      >
-                        {renderLucideIcon(iconName, "h-5 w-5")}
-                      </button>
-                    );
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
+            <IconPicker
+              value={selectedIcon}
+              onChangeAction={setSelectedIcon}
+              icons={AVAILABLE_ICONS}
+              maxRows={5}
+            />
             {!selectedIcon && (
               <p className="text-[10px] text-destructive font-medium">
                 Please select an icon for the category.
