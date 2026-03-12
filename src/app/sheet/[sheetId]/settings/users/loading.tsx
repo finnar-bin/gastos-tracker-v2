@@ -1,16 +1,25 @@
-import { LoadingCard, LoadingHeader } from "@/components/page-loading";
+import {
+  ListRowSkeleton,
+  PageHeaderSkeleton,
+  SectionTitleSkeleton,
+} from "@/components/page-loading";
 
 export default function UsersLoading() {
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 pb-24">
-      <LoadingHeader titleWidth="w-32" subtitleWidth="w-24" />
+      <PageHeaderSkeleton
+        backButton
+        actionWidth="w-12"
+        subtitleWidth="w-24"
+        titleWidth="w-36"
+      />
+      <div className="space-y-2">
+        <SectionTitleSkeleton width="w-28" />
+        <ListRowSkeleton dashed />
+      </div>
       <div className="space-y-3">
         {Array.from({ length: 5 }, (_, idx) => (
-          <LoadingCard
-            key={idx}
-            className="min-h-20"
-            lines={["w-1/2", "w-9/12", "w-1/4"]}
-          />
+          <ListRowSkeleton key={idx} meta trailingDetail />
         ))}
       </div>
     </div>
