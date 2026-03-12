@@ -127,6 +127,20 @@
       "when": 1773090000000,
       "tag": "0017_profile_push_notifications_toggle",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1773300000000,
+      "tag": "0018_read_rls_for_client_safe_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1773300100000,
+      "tag": "0019_drop_duplicate_select_policies",
+      "breakpoints": true
     }
   ]
 }

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
@@ -16,7 +17,7 @@ import {
  * @param sheetId The ID of the sheet to verify access for.
  * @returns An object containing the current user and the sheet data.
  */
-export async function requireSheetAccess(sheetId: string) {
+export const requireSheetAccess = cache(async (sheetId: string) => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -48,7 +49,7 @@ export async function requireSheetAccess(sheetId: string) {
     role: sheet.role,
     permissions: getSheetPermissions(sheet.role),
   };
-}
+});
 
 export async function requireSheetPermission(
   sheetId: string,

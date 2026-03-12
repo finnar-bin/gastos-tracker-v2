@@ -9,7 +9,7 @@ export default async function AddPaymentTypePage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  await requireSheetPermission(sheetId, "canAddPaymentType");
+  const { sheet } = await requireSheetPermission(sheetId, "canAddPaymentType");
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 pb-24">
@@ -18,6 +18,7 @@ export default async function AddPaymentTypePage({
         sheetId={sheetId}
         backHref={`/sheet/${sheetId}/settings/payment-types`}
         icon={ArrowLeft}
+        subtitle={sheet.name}
       />
 
       <PaymentTypeForm sheetId={sheetId} />
