@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { requireSheetAccess } from "@/lib/auth/sheets";
 import { Button } from "@/components/ui/button";
 
 interface HeaderProps {
@@ -15,15 +14,11 @@ interface HeaderProps {
 
 export async function Header({
   title,
-  sheetId,
   backHref,
   icon: Icon,
   subtitle,
   actions,
 }: HeaderProps) {
-  const { sheet } = await requireSheetAccess(sheetId);
-  const resolvedSubtitle = subtitle ?? sheet.name;
-
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
@@ -34,8 +29,8 @@ export async function Header({
         </Link>
         <div>
           <h1 className="text-xl font-bold">{title}</h1>
-          {resolvedSubtitle ? (
-            <p className="text-sm text-muted-foreground">{resolvedSubtitle}</p>
+          {subtitle ? (
+            <p className="text-sm text-muted-foreground">{subtitle}</p>
           ) : null}
         </div>
       </div>

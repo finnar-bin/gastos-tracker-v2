@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/loading-button";
 import {
@@ -19,6 +20,7 @@ import { createSheet } from "./actions";
 import { toast } from "sonner";
 
 export function CreateSheetDialog() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -36,6 +38,7 @@ export function CreateSheetDialog() {
     } else {
       toast.success("Sheet created successfully");
       setOpen(false);
+      router.refresh();
     }
   }
 

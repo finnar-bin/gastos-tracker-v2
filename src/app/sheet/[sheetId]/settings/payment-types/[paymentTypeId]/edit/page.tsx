@@ -1,11 +1,7 @@
-import { notFound } from "next/navigation";
-import { and, eq } from "drizzle-orm";
 import { ArrowLeft } from "lucide-react";
 import { Header } from "@/components/Header";
 import { requireSheetPermission } from "@/lib/auth/sheets";
-import { db } from "@/lib/db";
-import { paymentTypes } from "@/lib/db/schema";
-import PaymentTypeForm, { type PaymentTypeFormData } from "../../add/form";
+import { PaymentTypeFormLoader } from "../../payment-type-form-loader";
 
 export default async function EditPaymentTypePage({
   params,
@@ -13,28 +9,10 @@ export default async function EditPaymentTypePage({
   params: Promise<{ sheetId: string; paymentTypeId: string }>;
 }) {
   const { sheetId, paymentTypeId } = await params;
-  await requireSheetPermission(sheetId, "canEditPaymentType");
-
-  const [paymentType] = await db
-    .select()
-    .from(paymentTypes)
-    .where(
-      and(
-        eq(paymentTypes.id, paymentTypeId),
-        eq(paymentTypes.sheetId, sheetId),
-      ),
-    )
-    .limit(1);
-
-  if (!paymentType) {
-    notFound();
-  }
-
-  const initialData: PaymentTypeFormData = {
-    id: paymentType.id,
-    name: paymentType.name,
-    icon: paymentType.icon,
-  };
+  const { sheet } = await requireSheetPermission(
+    sheetId,
+    "canEditPaymentType",
+  );
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 pb-24">
@@ -43,13 +21,10 @@ export default async function EditPaymentTypePage({
         sheetId={sheetId}
         backHref={`/sheet/${sheetId}/settings/payment-types`}
         icon={ArrowLeft}
+        subtitle={sheet.name}
       />
 
-      <PaymentTypeForm
-        sheetId={sheetId}
-        mode="edit"
-        initialData={initialData}
-      />
+      <PaymentTypeFormLoader sheetId={sheetId} paymentTypeId={paymentTypeId} />
     </div>
   );
 }

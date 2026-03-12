@@ -12,33 +12,31 @@ export default async function GeneralSettingsPage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  const { permissions, user } = await requireSheetAccess(sheetId);
+  const { permissions, user, sheet } = await requireSheetAccess(sheetId);
 
-  const settingsRows = await db
-    .select({ currency: sheetSettings.currency })
-    .from(sheetSettings)
-    .where(eq(sheetSettings.sheetId, sheetId))
-    .limit(1);
+  const [settingsRows, sheetRows, profileRows] = await Promise.all([
+    db
+      .select({ currency: sheetSettings.currency })
+      .from(sheetSettings)
+      .where(eq(sheetSettings.sheetId, sheetId))
+      .limit(1),
+    db
+      .select({ name: sheets.name, description: sheets.description })
+      .from(sheets)
+      .where(eq(sheets.id, sheetId))
+      .limit(1),
+    db
+      .select({ pushNotificationsEnabled: profiles.pushNotificationsEnabled })
+      .from(profiles)
+      .where(eq(profiles.id, user.id))
+      .limit(1),
+  ]);
 
   const currentCurrency = settingsRows[0]?.currency ?? "USD";
-
-  const sheetRows = await db
-    .select({ name: sheets.name, description: sheets.description })
-    .from(sheets)
-    .where(eq(sheets.id, sheetId))
-    .limit(1);
-
   const currentName = sheetRows[0]?.name ?? "";
   const currentDescription = sheetRows[0]?.description ?? "";
 
-  const profileRows = await db
-    .select({ pushNotificationsEnabled: profiles.pushNotificationsEnabled })
-    .from(profiles)
-    .where(eq(profiles.id, user.id))
-    .limit(1);
-
-  const pushNotificationsEnabled =
-    profileRows[0]?.pushNotificationsEnabled ?? true;
+  const pushNotificationsEnabled = profileRows[0]?.pushNotificationsEnabled ?? true;
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 pb-24">
@@ -47,6 +45,7 @@ export default async function GeneralSettingsPage({
         sheetId={sheetId}
         backHref={`/sheet/${sheetId}/settings`}
         icon={ArrowLeft}
+        subtitle={sheet.name}
       />
 
       <GeneralSettingsForm

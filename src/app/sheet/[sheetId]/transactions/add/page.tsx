@@ -2,11 +2,8 @@ import { requireSheetAccess } from "@/lib/auth/sheets";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { db } from "@/lib/db";
-import { categories, paymentTypes } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
 import { ArrowDownCircle, ArrowUpCircle, ReceiptText } from "lucide-react";
-import TransactionForm from "./form";
+import { TransactionFormLoader } from "../transaction-form-loader";
 
 export default async function AddTransactionPage({
   params,
@@ -99,26 +96,10 @@ export default async function AddTransactionPage({
   }
 
   // 1. Get categories for the sheet
-  const availableCategories = await db
-    .select()
-    .from(categories)
-    .where(eq(categories.sheetId, selectedSheetId));
-
-  const availablePaymentTypes = await db
-    .select()
-    .from(paymentTypes)
-    .where(eq(paymentTypes.sheetId, selectedSheetId));
-
-  const filteredCategories = availableCategories.filter(
-    (cat) => cat.type === type,
-  );
-
   return (
     <div className="container max-w-md mx-auto p-4 flex items-center justify-center min-h-[80vh]">
-      <TransactionForm
+      <TransactionFormLoader
         sheetId={selectedSheetId}
-        categories={filteredCategories}
-        paymentTypes={availablePaymentTypes}
         transactionType={type}
         cancelHref={`/sheet/${selectedSheetId}`}
       />

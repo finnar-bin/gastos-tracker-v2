@@ -17,7 +17,7 @@ export default async function SettingsPage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  await requireSheetAccess(sheetId);
+  const { sheet } = await requireSheetAccess(sheetId);
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6">
@@ -26,6 +26,7 @@ export default async function SettingsPage({
         sheetId={sheetId}
         backHref={`/sheet/${sheetId}`}
         icon={Settings}
+        subtitle={sheet.name}
       />
       <div className="space-y-8">
         <section className="space-y-4">

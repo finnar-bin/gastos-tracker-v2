@@ -9,7 +9,7 @@ export default async function AddCategoryPage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  await requireSheetPermission(sheetId, "canAddCategory");
+  const { sheet } = await requireSheetPermission(sheetId, "canAddCategory");
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 pb-24">
@@ -18,6 +18,7 @@ export default async function AddCategoryPage({
         sheetId={sheetId}
         backHref={`/sheet/${sheetId}/settings/category`}
         icon={ArrowLeft}
+        subtitle={sheet.name}
       />
 
       <CategoryForm sheetId={sheetId} />

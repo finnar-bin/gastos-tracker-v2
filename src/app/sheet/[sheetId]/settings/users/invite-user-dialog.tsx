@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ type InviteUserDialogProps = {
 };
 
 export function InviteUserDialog({ sheetId }: InviteUserDialogProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("viewer");
@@ -66,6 +68,7 @@ export function InviteUserDialog({ sheetId }: InviteUserDialogProps) {
     setEmail("");
     setRole("viewer");
     setOpen(false);
+    router.refresh();
   }
 
   return (
