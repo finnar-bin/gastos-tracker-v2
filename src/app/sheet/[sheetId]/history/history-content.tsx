@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { TransactionCard } from "@/components/transaction-card";
 import { createClient } from "@/lib/supabase/client";
+import type { SheetMemberProfile } from "@/lib/sheet-member-profiles";
 import { HistoryFilter } from "./filter";
 
 type CategoryRow = {
@@ -18,13 +19,6 @@ type PaymentTypeRow = {
   id: string;
   name: string;
   icon: string;
-};
-
-type ProfileRow = {
-  id: string;
-  display_name: string | null;
-  email: string | null;
-  avatar_url: string | null;
 };
 
 type TransactionRow = {
@@ -48,11 +42,14 @@ export function HistoryContent({
   sheetId,
   currency,
   canEditTransaction,
+  memberProfiles,
 }: {
   sheetId: string;
   currency: string;
   canEditTransaction: boolean;
+  memberProfiles: SheetMemberProfile[];
 }) {
+  const profilesById = new Map(memberProfiles.map((profile) => [profile.id, profile]));
   const searchParams = useSearchParams();
   const now = new Date();
   const parsedYear = Number.parseInt(searchParams.get("year") ?? "", 10);
@@ -110,22 +107,13 @@ export function HistoryContent({
       const categories = (categoriesResult.data ?? []) as CategoryRow[];
       const txs = (transactionsResult.data ?? []) as TransactionRow[];
       const paymentTypeIds = [...new Set(txs.map((tx) => tx.payment_type_id).filter(Boolean))] as string[];
-      const creatorIds = [...new Set(txs.map((tx) => tx.created_by))];
-
-      const [paymentTypesResult, profilesResult] = await Promise.all([
+      const [paymentTypesResult] = await Promise.all([
         paymentTypeIds.length > 0
           ? supabase.from("payment_types").select("id, name, icon").in("id", paymentTypeIds)
-          : Promise.resolve({ data: [], error: null }),
-        creatorIds.length > 0
-          ? supabase
-              .from("profiles")
-              .select("id, display_name, email, avatar_url")
-              .in("id", creatorIds)
           : Promise.resolve({ data: [], error: null }),
       ]);
 
       if (paymentTypesResult.error) throw paymentTypesResult.error;
-      if (profilesResult.error) throw profilesResult.error;
 
       const categoriesById = new Map(categories.map((category) => [category.id, category]));
       const paymentTypesById = new Map(
@@ -133,9 +121,6 @@ export function HistoryContent({
           paymentType.id,
           paymentType,
         ]),
-      );
-      const profilesById = new Map(
-        ((profilesResult.data ?? []) as ProfileRow[]).map((profile) => [profile.id, profile]),
       );
 
       return {
@@ -157,9 +142,9 @@ export function HistoryContent({
             categoryIcon: category?.icon ?? "LayoutGrid",
             paymentTypeName: paymentType?.name ?? null,
             paymentTypeIcon: paymentType?.icon ?? null,
-            creatorDisplayName: profile?.display_name ?? null,
+            creatorDisplayName: profile?.displayName ?? null,
             creatorEmail: profile?.email ?? null,
-            creatorAvatarUrl: profile?.avatar_url ?? null,
+            creatorAvatarUrl: profile?.avatarUrl ?? null,
           };
         }),
       };

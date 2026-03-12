@@ -16,6 +16,7 @@ import { FormattedAmount } from "@/components/formatted-amount";
 import { UserAvatar } from "@/components/user-avatar";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { createClient } from "@/lib/supabase/client";
+import type { SheetMemberProfile } from "@/lib/sheet-member-profiles";
 
 type TransactionRow = {
   id: string;
@@ -34,13 +35,6 @@ type CategoryRow = {
   icon: string;
 };
 
-type ProfileRow = {
-  id: string;
-  display_name: string | null;
-  email: string | null;
-  avatar_url: string | null;
-};
-
 const supabase = createClient();
 
 function toIsoDate(value: Date) {
@@ -50,10 +44,13 @@ function toIsoDate(value: Date) {
 export function DashboardContent({
   sheetId,
   currency,
+  memberProfiles,
 }: {
   sheetId: string;
   currency: string;
+  memberProfiles: SheetMemberProfile[];
 }) {
+  const profilesById = new Map(memberProfiles.map((profile) => [profile.id, profile]));
   const dashboardQuery = useQuery({
     queryKey: ["sheet", sheetId, "dashboard"],
     queryFn: async () => {
@@ -116,32 +113,18 @@ export function DashboardContent({
       }
 
       const categoryIds = [...new Set(recentTransactions.map((tx) => tx.category_id))];
-      const creatorIds = [...new Set(recentTransactions.map((tx) => tx.created_by))];
-      const [categoriesResult, profilesResult] = await Promise.all([
+      const [categoriesResult] = await Promise.all([
         categoryIds.length > 0
           ? supabase.from("categories").select("id, name, icon").in("id", categoryIds)
-          : Promise.resolve({ data: [], error: null }),
-        creatorIds.length > 0
-          ? supabase
-              .from("profiles")
-              .select("id, display_name, email, avatar_url")
-              .in("id", creatorIds)
           : Promise.resolve({ data: [], error: null }),
       ]);
 
       if (categoriesResult.error) throw categoriesResult.error;
-      if (profilesResult.error) throw profilesResult.error;
 
       const categoriesById = new Map(
         ((categoriesResult.data ?? []) as CategoryRow[]).map((category) => [
           category.id,
           category,
-        ]),
-      );
-      const profilesById = new Map(
-        ((profilesResult.data ?? []) as ProfileRow[]).map((profile) => [
-          profile.id,
-          profile,
         ]),
       );
 
@@ -161,9 +144,9 @@ export function DashboardContent({
             date: tx.date,
             categoryName: category?.name ?? "Category",
             categoryIcon: category?.icon ?? "LayoutGrid",
-            creatorDisplayName: profile?.display_name ?? null,
+            creatorDisplayName: profile?.displayName ?? null,
             creatorEmail: profile?.email ?? null,
-            creatorAvatarUrl: profile?.avatar_url ?? null,
+            creatorAvatarUrl: profile?.avatarUrl ?? null,
           };
         }),
       };
