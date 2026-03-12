@@ -2,6 +2,7 @@ import { requireSheetAccess } from "@/lib/auth/sheets";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getSheetCurrency } from "@/lib/sheet-settings";
+import { getSheetMemberProfiles } from "@/lib/sheet-member-profiles";
 import { DashboardContent } from "./dashboard-content";
 
 export default async function SheetDashboardPage({
@@ -10,9 +11,10 @@ export default async function SheetDashboardPage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  const [{ sheet }, sheetCurrency] = await Promise.all([
+  const [{ sheet }, sheetCurrency, memberProfiles] = await Promise.all([
     requireSheetAccess(sheetId),
     getSheetCurrency(sheetId),
+    getSheetMemberProfiles(sheetId),
   ]);
 
   return (
@@ -35,7 +37,11 @@ export default async function SheetDashboardPage({
           </form>
         </div>
       </header>
-      <DashboardContent sheetId={sheetId} currency={sheetCurrency} />
+      <DashboardContent
+        sheetId={sheetId}
+        currency={sheetCurrency}
+        memberProfiles={memberProfiles}
+      />
     </div>
   );
 }

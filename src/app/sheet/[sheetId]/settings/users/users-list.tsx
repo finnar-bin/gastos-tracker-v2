@@ -6,19 +6,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { createClient } from "@/lib/supabase/client";
+import type { SheetMemberProfile } from "@/lib/sheet-member-profiles";
 import { RemoveUserButton } from "./remove-user-button";
 import { revokeSheetInvite } from "./actions";
 
 type SheetUserRow = {
   user_id: string;
   role: string;
-};
-
-type ProfileRow = {
-  id: string;
-  email: string;
-  display_name: string | null;
-  avatar_url: string | null;
 };
 
 type InviteRow = {
@@ -34,11 +28,17 @@ export function UsersList({
   sheetId,
   currentUserId,
   canManageInvites,
+  memberProfiles,
 }: {
   sheetId: string;
   currentUserId: string;
   canManageInvites: boolean;
+  memberProfiles: SheetMemberProfile[];
 }) {
+  const memberProfilesById = new Map(
+    memberProfiles.map((profile) => [profile.id, profile]),
+  );
+
   const usersQuery = useQuery({
     queryKey: ["sheet", sheetId, "users"],
     queryFn: async () => {
@@ -56,31 +56,14 @@ export function UsersList({
       if (pendingInvitesResult.error) throw pendingInvitesResult.error;
 
       const memberships = (membershipsResult.data ?? []) as SheetUserRow[];
-      const userIds = memberships.map((member) => member.user_id);
-      const profilesResult =
-        userIds.length > 0
-          ? await supabase
-              .from("profiles")
-              .select("id, email, display_name, avatar_url")
-              .in("id", userIds)
-          : { data: [], error: null };
-
-      if (profilesResult.error) throw profilesResult.error;
-
-      const profilesById = new Map(
-        ((profilesResult.data ?? []) as ProfileRow[]).map((profile) => [
-          profile.id,
-          profile,
-        ]),
-      );
 
       const members = memberships.map((member) => {
-        const profile = profilesById.get(member.user_id);
+        const profile = memberProfilesById.get(member.user_id);
         return {
           id: member.user_id,
           email: profile?.email ?? "",
-          displayName: profile?.display_name ?? null,
-          avatarUrl: profile?.avatar_url ?? null,
+          displayName: profile?.displayName ?? null,
+          avatarUrl: profile?.avatarUrl ?? null,
           role: member.role,
         };
       });

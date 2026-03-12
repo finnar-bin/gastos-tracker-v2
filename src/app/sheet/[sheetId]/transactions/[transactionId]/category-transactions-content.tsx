@@ -5,18 +5,12 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { TransactionCard } from "@/components/transaction-card";
 import { createClient } from "@/lib/supabase/client";
+import type { SheetMemberProfile } from "@/lib/sheet-member-profiles";
 
 type PaymentTypeRow = {
   id: string;
   name: string;
   icon: string;
-};
-
-type ProfileRow = {
-  id: string;
-  display_name: string | null;
-  email: string | null;
-  avatar_url: string | null;
 };
 
 type TransactionRow = {
@@ -43,6 +37,7 @@ export function CategoryTransactionsContent({
   categoryType,
   currency,
   canEditTransaction,
+  memberProfiles,
 }: {
   sheetId: string;
   categoryId: string;
@@ -51,7 +46,9 @@ export function CategoryTransactionsContent({
   categoryType: "income" | "expense";
   currency: string;
   canEditTransaction: boolean;
+  memberProfiles: SheetMemberProfile[];
 }) {
+  const profilesById = new Map(memberProfiles.map((profile) => [profile.id, profile]));
   const searchParams = useSearchParams();
   const now = new Date();
   const parsedYear = Number.parseInt(searchParams.get("year") ?? "", 10);
@@ -84,31 +81,19 @@ export function CategoryTransactionsContent({
 
       const transactions = (txs ?? []) as TransactionRow[];
       const paymentTypeIds = [...new Set(transactions.map((tx) => tx.payment_type_id).filter(Boolean))] as string[];
-      const creatorIds = [...new Set(transactions.map((tx) => tx.created_by))];
-
-      const [paymentTypesResult, profilesResult] = await Promise.all([
+      const [paymentTypesResult] = await Promise.all([
         paymentTypeIds.length > 0
           ? supabase.from("payment_types").select("id, name, icon").in("id", paymentTypeIds)
-          : Promise.resolve({ data: [], error: null }),
-        creatorIds.length > 0
-          ? supabase
-              .from("profiles")
-              .select("id, display_name, email, avatar_url")
-              .in("id", creatorIds)
           : Promise.resolve({ data: [], error: null }),
       ]);
 
       if (paymentTypesResult.error) throw paymentTypesResult.error;
-      if (profilesResult.error) throw profilesResult.error;
 
       const paymentTypesById = new Map(
         ((paymentTypesResult.data ?? []) as PaymentTypeRow[]).map((paymentType) => [
           paymentType.id,
           paymentType,
         ]),
-      );
-      const profilesById = new Map(
-        ((profilesResult.data ?? []) as ProfileRow[]).map((profile) => [profile.id, profile]),
       );
 
       return transactions.map((tx) => {
@@ -127,9 +112,9 @@ export function CategoryTransactionsContent({
           categoryIcon,
           paymentTypeName: paymentType?.name ?? null,
           paymentTypeIcon: paymentType?.icon ?? null,
-          creatorDisplayName: profile?.display_name ?? null,
+          creatorDisplayName: profile?.displayName ?? null,
           creatorEmail: profile?.email ?? null,
-          creatorAvatarUrl: profile?.avatar_url ?? null,
+          creatorAvatarUrl: profile?.avatarUrl ?? null,
         };
       });
     },

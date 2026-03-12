@@ -2,6 +2,7 @@ import { requireSheetAccess } from "@/lib/auth/sheets";
 import { History } from "lucide-react";
 import { Header } from "@/components/Header";
 import { getSheetCurrency } from "@/lib/sheet-settings";
+import { getSheetMemberProfiles } from "@/lib/sheet-member-profiles";
 import { HistoryContent } from "./history-content";
 
 export default async function HistoryPage({
@@ -10,9 +11,10 @@ export default async function HistoryPage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  const [{ permissions, sheet }, sheetCurrency] = await Promise.all([
+  const [{ permissions, sheet }, sheetCurrency, memberProfiles] = await Promise.all([
     requireSheetAccess(sheetId),
     getSheetCurrency(sheetId),
+    getSheetMemberProfiles(sheetId),
   ]);
 
   return (
@@ -29,6 +31,7 @@ export default async function HistoryPage({
         sheetId={sheetId}
         currency={sheetCurrency}
         canEditTransaction={permissions.canEditTransaction}
+        memberProfiles={memberProfiles}
       />
     </div>
   );
