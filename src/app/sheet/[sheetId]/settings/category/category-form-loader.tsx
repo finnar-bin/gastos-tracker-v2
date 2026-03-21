@@ -21,9 +21,11 @@ const supabase = createClient();
 export function CategoryFormLoader({
   sheetId,
   categoryId,
+  returnType,
 }: {
   sheetId: string;
   categoryId: string;
+  returnType: "income" | "expense";
 }) {
   const categoryQuery = useQuery({
     queryKey: ["sheet", sheetId, "category-form", categoryId],
@@ -74,5 +76,12 @@ export function CategoryFormLoader({
     dueReminderFrequency: categoryQuery.data.due_reminder_frequency,
   };
 
-  return <CategoryForm sheetId={sheetId} mode="edit" initialData={initialData} />;
+  return (
+    <CategoryForm
+      sheetId={sheetId}
+      mode="edit"
+      initialData={initialData}
+      returnType={returnType}
+    />
+  );
 }

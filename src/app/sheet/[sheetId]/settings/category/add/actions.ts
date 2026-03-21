@@ -30,6 +30,7 @@ export async function addCategory(formData: FormData) {
     ? (formData.get("dueDate") as string)
     : null;
   const dueReminderFrequencyValue = formData.get("dueReminderFrequency");
+  const returnType = formData.get("returnType") as string | null;
   const dueReminderFrequency =
     typeof dueReminderFrequencyValue === "string" &&
     dueReminderFrequencyValue !== "none"
@@ -57,5 +58,9 @@ export async function addCategory(formData: FormData) {
     createdBy: user.id,
   });
 
-  redirect(`/sheet/${sheetId}/settings/category`);
+  redirect(
+    `/sheet/${sheetId}/settings/category?type=${
+      returnType === "income" ? "income" : type
+    }`,
+  );
 }
