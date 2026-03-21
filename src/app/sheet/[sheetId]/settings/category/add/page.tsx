@@ -5,23 +5,32 @@ import { Header } from "@/components/Header";
 
 export default async function AddCategoryPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ sheetId: string }>;
+  searchParams: Promise<{ type?: string }>;
 }) {
   const { sheetId } = await params;
+  const resolvedSearchParams = await searchParams;
   const { sheet } = await requireSheetPermission(sheetId, "canAddCategory");
+  const selectedType =
+    resolvedSearchParams.type === "income" ? "income" : "expense";
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 pb-24">
       <Header
         title="New Category"
         sheetId={sheetId}
-        backHref={`/sheet/${sheetId}/settings/category`}
+        backHref={`/sheet/${sheetId}/settings/category?type=${selectedType}`}
         icon={ArrowLeft}
         subtitle={sheet.name}
       />
 
-      <CategoryForm sheetId={sheetId} />
+      <CategoryForm
+        sheetId={sheetId}
+        initialType={selectedType}
+        returnType={selectedType}
+      />
     </div>
   );
 }

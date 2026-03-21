@@ -4,6 +4,7 @@ import { useState } from "react";
 import { addCategory } from "./actions";
 import { updateCategory, deleteCategory } from "../[categoryId]/edit/actions";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { LoadingButton } from "@/components/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -108,12 +109,16 @@ type CategoryFormProps = {
   sheetId: string;
   mode?: "add" | "edit";
   initialData?: CategoryFormData;
+  initialType?: "income" | "expense";
+  returnType?: "income" | "expense";
 };
 
 export default function CategoryForm({
   sheetId,
   mode = "add",
   initialData,
+  initialType = "expense",
+  returnType = initialData?.type ?? initialType,
 }: CategoryFormProps) {
   const [selectedIcon, setSelectedIcon] = useState(initialData?.icon ?? "");
   const [dueReminderFrequency, setDueReminderFrequency] = useState<
@@ -133,6 +138,7 @@ export default function CategoryForm({
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="sheetId" value={sheetId} />
           <input type="hidden" name="icon" value={selectedIcon} />
+          <input type="hidden" name="returnType" value={returnType} />
           {mode === "edit" && initialData && (
             <input type="hidden" name="categoryId" value={initialData.id} />
           )}
@@ -165,7 +171,7 @@ export default function CategoryForm({
 
           <div className="space-y-2">
             <Label htmlFor="type">Type</Label>
-            <Select name="type" defaultValue={initialData?.type ?? "expense"}>
+            <Select name="type" defaultValue={initialData?.type ?? initialType}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
@@ -202,10 +208,9 @@ export default function CategoryForm({
 
           <div className="space-y-2">
             <Label htmlFor="dueDate">Due Date (Optional)</Label>
-            <Input
+            <DateInput
               id="dueDate"
               name="dueDate"
-              type="date"
               defaultValue={initialData?.dueDate ?? ""}
             />
             <div className="flex items-start gap-2 mt-1 text-[10px] text-muted-foreground">
@@ -253,7 +258,9 @@ export default function CategoryForm({
           <div className="pt-4 space-y-4">
             <SubmitButton disabled={!selectedIcon} mode={mode} />
             <Button variant="outline" className="w-full" asChild>
-              <Link href={`/sheet/${sheetId}/settings/category`}>Cancel</Link>
+              <Link href={`/sheet/${sheetId}/settings/category?type=${returnType}`}>
+                Cancel
+              </Link>
             </Button>
           </div>
         </form>

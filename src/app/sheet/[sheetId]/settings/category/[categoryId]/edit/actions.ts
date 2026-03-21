@@ -28,6 +28,7 @@ export async function updateCategory(formData: FormData) {
   const defaultAmount = formData.get("defaultAmount")
     ? (formData.get("defaultAmount") as string)
     : null;
+  const returnType = formData.get("returnType") as string | null;
   const dueDate = formData.get("dueDate")
     ? (formData.get("dueDate") as string)
     : null;
@@ -60,7 +61,11 @@ export async function updateCategory(formData: FormData) {
     })
     .where(and(eq(categories.id, categoryId), eq(categories.sheetId, sheetId)));
 
-  redirect(`/sheet/${sheetId}/settings/category`);
+  redirect(
+    `/sheet/${sheetId}/settings/category?type=${
+      returnType === "income" ? "income" : type
+    }`,
+  );
 }
 
 export async function deleteCategory(formData: FormData) {
@@ -75,6 +80,7 @@ export async function deleteCategory(formData: FormData) {
 
   const categoryId = formData.get("categoryId") as string;
   const sheetId = formData.get("sheetId") as string;
+  const returnType = formData.get("returnType") as string | null;
 
   await requireSheetPermission(sheetId, "canDeleteCategory");
 
@@ -82,5 +88,9 @@ export async function deleteCategory(formData: FormData) {
     .delete(categories)
     .where(and(eq(categories.id, categoryId), eq(categories.sheetId, sheetId)));
 
-  redirect(`/sheet/${sheetId}/settings/category`);
+  redirect(
+    `/sheet/${sheetId}/settings/category?type=${
+      returnType === "income" ? "income" : "expense"
+    }`,
+  );
 }

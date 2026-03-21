@@ -9,6 +9,7 @@ import {
   updatePaymentType,
 } from "../[paymentTypeId]/edit/actions";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -103,9 +104,7 @@ export default function PaymentTypeForm({
           </div>
 
           <div className="pt-4 space-y-4">
-            <Button type="submit" className="w-full" disabled={!selectedIcon}>
-              {mode === "edit" ? "Update Payment Type" : "Create Payment Type"}
-            </Button>
+            <SubmitButton disabled={!selectedIcon} mode={mode} />
             <Button variant="outline" className="w-full" asChild>
               <Link href={`/sheet/${sheetId}/settings/payment-types`}>
                 Cancel
@@ -139,7 +138,7 @@ export default function PaymentTypeForm({
                       name="paymentTypeId"
                       value={initialData.id}
                     />
-                    <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                    <DeleteButton />
                   </form>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -148,5 +147,36 @@ export default function PaymentTypeForm({
         ) : null}
       </CardContent>
     </Card>
+  );
+}
+
+function SubmitButton({
+  disabled,
+  mode,
+}: {
+  disabled: boolean;
+  mode: "add" | "edit";
+}) {
+  return (
+    <LoadingButton
+      type="submit"
+      className="w-full"
+      disabled={disabled}
+      text={mode === "edit" ? "Update Payment Type" : "Create Payment Type"}
+      loadingText={mode === "edit" ? "Saving..." : "Creating..."}
+    />
+  );
+}
+
+function DeleteButton() {
+  return (
+    <AlertDialogAction asChild variant="destructive">
+      <LoadingButton
+        type="submit"
+        variant="destructive"
+        text="Delete"
+        loadingText="Deleting..."
+      />
+    </AlertDialogAction>
   );
 }

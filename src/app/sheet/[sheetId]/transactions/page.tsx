@@ -16,7 +16,7 @@ export default async function YearOverviewPage({
   ]);
 
   return (
-    <div className="container max-w-md mx-auto p-4 h-dvh flex flex-col gap-6 overflow-hidden">
+    <div className="container max-w-md mx-auto p-4 space-y-6">
       <Header
         title="Transactions"
         sheetId={sheetId}

@@ -13,6 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { FormattedAmount } from "@/components/formatted-amount";
+import { getMonthDateRange } from "@/lib/date-only";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { createClient } from "@/lib/supabase/client";
 import { TransactionsFilter } from "./filter";
@@ -31,10 +32,6 @@ type TransactionRow = {
 };
 
 const supabase = createClient();
-
-function toIsoDate(value: Date) {
-  return value.toISOString().slice(0, 10);
-}
 
 function getBudgetStatus(totalAmount: string, budget: string | null) {
   if (!budget) {
@@ -110,8 +107,10 @@ export function TransactionsContent({
       selectedType,
     ],
     queryFn: async () => {
-      const startDate = toIsoDate(new Date(selectedYear, selectedMonth, 1));
-      const endDate = toIsoDate(new Date(selectedYear, selectedMonth + 1, 0));
+      const { startDate, endDate } = getMonthDateRange(
+        selectedYear,
+        selectedMonth,
+      );
       const [categoriesResult, transactionsResult] = await Promise.all([
         supabase
           .from("categories")
@@ -155,7 +154,7 @@ export function TransactionsContent({
         type={selectedType}
       />
 
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1">
+      <div className="space-y-3">
         {overviewQuery.isLoading ? (
           Array.from({ length: 5 }, (_, idx) => (
             <div key={idx} className="h-20 rounded-xl bg-muted/40 animate-pulse" />

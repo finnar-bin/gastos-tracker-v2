@@ -2,10 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Calendar, LayoutGrid } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Calendar, LayoutGrid, TrendingDown, TrendingUp } from "lucide-react";
 import { createElement } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { TabHeader } from "@/components/tab-header";
 import { FormattedAmount } from "@/components/formatted-amount";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { queryKeys } from "@/lib/query-keys";
@@ -28,14 +30,15 @@ type CurrencyRow = {
 
 const supabase = createClient();
 
-async function fetchCategories(sheetId: string) {
+async function fetchCategories(sheetId: string, type: "income" | "expense") {
   const { data, error } = await supabase
     .from("categories")
     .select(
       "id, name, icon, type, budget, due_date, due_reminder_frequency, created_at",
     )
     .eq("sheet_id", sheetId)
-    .order("created_at", { ascending: false });
+    .eq("type", type)
+    .order("name", { ascending: true });
 
   if (error) {
     throw error;
@@ -58,6 +61,19 @@ async function fetchSheetCurrency(sheetId: string) {
   return ((data as CurrencyRow | null)?.currency ?? "USD") as string;
 }
 
+const TYPE_TABS = [
+  {
+    value: "income",
+    label: "Income",
+    icon: <TrendingUp className="h-4 w-4" />,
+  },
+  {
+    value: "expense",
+    label: "Expense",
+    icon: <TrendingDown className="h-4 w-4" />,
+  },
+];
+
 export function CategoryList({
   sheetId,
   canEditCategory,
@@ -67,18 +83,35 @@ export function CategoryList({
   canEditCategory: boolean;
   canAddCategory: boolean;
 }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedType =
+    searchParams.get("type") === "income" ? "income" : "expense";
   const categoriesQuery = useQuery({
-    queryKey: queryKeys.categories(sheetId),
-    queryFn: () => fetchCategories(sheetId),
+    queryKey: queryKeys.categories(sheetId, selectedType),
+    queryFn: () => fetchCategories(sheetId, selectedType),
   });
   const currencyQuery = useQuery({
     queryKey: queryKeys.sheetCurrency(sheetId),
     queryFn: () => fetchSheetCurrency(sheetId),
   });
 
+  const navigateWithType = (type: "income" | "expense") => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("type", type);
+    router.push(`/sheet/${sheetId}/settings/category?${params.toString()}`);
+  };
+
   if (categoriesQuery.isLoading || currencyQuery.isLoading) {
     return (
       <div className="space-y-4">
+        <TabHeader
+          value={selectedType}
+          onChangeAction={(value) =>
+            navigateWithType(value as "income" | "expense")
+          }
+          items={TYPE_TABS}
+        />
         {Array.from({ length: 3 }, (_, idx) => (
           <Card key={idx} className="overflow-hidden">
             <CardContent className="h-24 animate-pulse bg-muted/40" />
@@ -90,20 +123,29 @@ export function CategoryList({
 
   if (categoriesQuery.error || currencyQuery.error) {
     return (
-      <div className="rounded-xl border border-dashed p-6 text-center">
-        <p className="text-sm text-muted-foreground">
-          Failed to load categories.
-        </p>
-        <Button
-          variant="outline"
-          className="mt-4"
-          onClick={() => {
-            void categoriesQuery.refetch();
-            void currencyQuery.refetch();
-          }}
-        >
-          Retry
-        </Button>
+      <div className="space-y-4">
+        <TabHeader
+          value={selectedType}
+          onChangeAction={(value) =>
+            navigateWithType(value as "income" | "expense")
+          }
+          items={TYPE_TABS}
+        />
+        <div className="rounded-xl border border-dashed p-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            Failed to load categories.
+          </p>
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => {
+              void categoriesQuery.refetch();
+              void currencyQuery.refetch();
+            }}
+          >
+            Retry
+          </Button>
+        </div>
       </div>
     );
   }
@@ -113,25 +155,43 @@ export function CategoryList({
 
   if (categoryList.length === 0) {
     return (
-      <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/30">
-        <LayoutGrid className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-20" />
-        <p className="text-muted-foreground">No categories yet.</p>
-        {canAddCategory ? (
-          <Link
-            href={`/sheet/${sheetId}/settings/category/add`}
-            className="mt-4 inline-block"
-          >
-            <Button variant="outline" size="sm">
-              Create your first one
-            </Button>
-          </Link>
-        ) : null}
+      <div className="space-y-4">
+        <TabHeader
+          value={selectedType}
+          onChangeAction={(value) =>
+            navigateWithType(value as "income" | "expense")
+          }
+          items={TYPE_TABS}
+        />
+        <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/30">
+          <LayoutGrid className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-20" />
+          <p className="text-muted-foreground">
+            No {selectedType} categories yet.
+          </p>
+          {canAddCategory ? (
+            <Link
+              href={`/sheet/${sheetId}/settings/category/add?type=${selectedType}`}
+              className="mt-4 inline-block"
+            >
+              <Button variant="outline" size="sm">
+                Create your first one
+              </Button>
+            </Link>
+          ) : null}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
+      <TabHeader
+        value={selectedType}
+        onChangeAction={(value) =>
+          navigateWithType(value as "income" | "expense")
+        }
+        items={TYPE_TABS}
+      />
       {categoryList.map((category) => {
         const Icon = getLucideIcon(category.icon) || LayoutGrid;
         const isExpense = category.type === "expense";
@@ -194,7 +254,7 @@ export function CategoryList({
         return canEditCategory ? (
           <Link
             key={category.id}
-            href={`/sheet/${sheetId}/settings/category/${category.id}/edit`}
+            href={`/sheet/${sheetId}/settings/category/${category.id}/edit?type=${selectedType}`}
             className="block"
           >
             {content}
