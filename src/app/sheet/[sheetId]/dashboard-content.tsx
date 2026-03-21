@@ -14,6 +14,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormattedAmount } from "@/components/formatted-amount";
 import { UserAvatar } from "@/components/user-avatar";
+import {
+  getMonthDateRange,
+  getMonthIndexFromDateString,
+} from "@/lib/date-only";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { createClient } from "@/lib/supabase/client";
 import type { SheetMemberProfile } from "@/lib/sheet-member-profiles";
@@ -37,10 +41,6 @@ type CategoryRow = {
 
 const supabase = createClient();
 
-function toIsoDate(value: Date) {
-  return value.toISOString().slice(0, 10);
-}
-
 export function DashboardContent({
   sheetId,
   currency,
@@ -55,10 +55,12 @@ export function DashboardContent({
     queryKey: ["sheet", sheetId, "dashboard"],
     queryFn: async () => {
       const now = new Date();
-      const monthStart = toIsoDate(new Date(now.getFullYear(), now.getMonth(), 1));
-      const monthEnd = toIsoDate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
-      const yearStart = toIsoDate(new Date(now.getFullYear(), 0, 1));
-      const yearEnd = toIsoDate(new Date(now.getFullYear(), 11, 31));
+      const { startDate: monthStart, endDate: monthEnd } = getMonthDateRange(
+        now.getFullYear(),
+        now.getMonth(),
+      );
+      const yearStart = `${now.getFullYear()}-01-01`;
+      const yearEnd = `${now.getFullYear()}-12-31`;
 
       const [monthlyResult, yearlyResult, recentResult] = await Promise.all([
         supabase
@@ -103,7 +105,10 @@ export function DashboardContent({
       }));
 
       for (const row of yearlyRows) {
-        const monthIndex = new Date(row.date).getMonth();
+        const monthIndex = getMonthIndexFromDateString(row.date);
+        if (monthIndex === null) {
+          continue;
+        }
         const value = Number(row.amount ?? 0);
         if (row.type === "income") {
           chartData[monthIndex].income += value;

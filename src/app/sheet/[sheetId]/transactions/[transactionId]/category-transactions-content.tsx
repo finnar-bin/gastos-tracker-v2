@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { TransactionCard } from "@/components/transaction-card";
 import { createClient } from "@/lib/supabase/client";
+import { getMonthDateRange } from "@/lib/date-only";
 import type { SheetMemberProfile } from "@/lib/sheet-member-profiles";
 
 type PaymentTypeRow = {
@@ -24,10 +25,6 @@ type TransactionRow = {
 };
 
 const supabase = createClient();
-
-function toIsoDate(value: Date) {
-  return value.toISOString().slice(0, 10);
-}
 
 export function CategoryTransactionsContent({
   sheetId,
@@ -66,8 +63,10 @@ export function CategoryTransactionsContent({
   const categoryTransactionsQuery = useQuery({
     queryKey: ["sheet", sheetId, "category-transactions", categoryId, selectedYear, selectedMonth],
     queryFn: async () => {
-      const startDate = toIsoDate(new Date(selectedYear, selectedMonth, 1));
-      const endDate = toIsoDate(new Date(selectedYear, selectedMonth + 1, 0));
+      const { startDate, endDate } = getMonthDateRange(
+        selectedYear,
+        selectedMonth,
+      );
       const { data: txs, error } = await supabase
         .from("transactions")
         .select("id, amount, type, description, date, payment_type_id, created_by")

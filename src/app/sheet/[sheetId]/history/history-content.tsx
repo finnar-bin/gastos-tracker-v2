@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { TransactionCard } from "@/components/transaction-card";
 import { createClient } from "@/lib/supabase/client";
+import { getMonthDateRange } from "@/lib/date-only";
 import type { SheetMemberProfile } from "@/lib/sheet-member-profiles";
 import { HistoryFilter } from "./filter";
 
@@ -33,10 +34,6 @@ type TransactionRow = {
 };
 
 const supabase = createClient();
-
-function toIsoDate(value: Date) {
-  return value.toISOString().slice(0, 10);
-}
 
 export function HistoryContent({
   sheetId,
@@ -75,8 +72,10 @@ export function HistoryContent({
       selectedCategoryId ?? "all",
     ],
     queryFn: async () => {
-      const startDate = toIsoDate(new Date(selectedYear, selectedMonth, 1));
-      const endDate = toIsoDate(new Date(selectedYear, selectedMonth + 1, 0));
+      const { startDate, endDate } = getMonthDateRange(
+        selectedYear,
+        selectedMonth,
+      );
       let txQuery = supabase
         .from("transactions")
         .select("id, amount, type, description, date, category_id, payment_type_id, created_by")
