@@ -166,7 +166,7 @@ export default function CategoryForm({
           <div className="space-y-2">
             <Label htmlFor="type">Type</Label>
             <Select name="type" defaultValue={initialData?.type ?? "expense"}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
@@ -232,7 +232,7 @@ export default function CategoryForm({
                 )
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="No reminder" />
               </SelectTrigger>
               <SelectContent>

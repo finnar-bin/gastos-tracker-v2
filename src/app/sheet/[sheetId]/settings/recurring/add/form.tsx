@@ -179,7 +179,7 @@ export default function RecurringTransactionForm({
                 value={transactionType}
                 onValueChange={handleTypeChange}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -234,7 +234,7 @@ export default function RecurringTransactionForm({
                 defaultValue={initialData?.frequency ?? "monthly"}
                 onValueChange={(val) => setFrequency(val)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select frequency" />
                 </SelectTrigger>
                 <SelectContent>
