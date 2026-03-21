@@ -2,10 +2,16 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { LayoutGrid } from "lucide-react";
+import { AlertTriangle, LayoutGrid } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { FormattedAmount } from "@/components/formatted-amount";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { createClient } from "@/lib/supabase/client";
@@ -16,6 +22,7 @@ type CategoryRow = {
   name: string;
   icon: string;
   type: "income" | "expense";
+  budget: string | null;
 };
 
 type TransactionRow = {
@@ -27,6 +34,51 @@ const supabase = createClient();
 
 function toIsoDate(value: Date) {
   return value.toISOString().slice(0, 10);
+}
+
+function getBudgetStatus(totalAmount: string, budget: string | null) {
+  if (!budget) {
+    return {
+      amountClassName: "text-foreground",
+      budgetLeft: null as number | null,
+      shouldShowWarning: false,
+    };
+  }
+
+  const total = Number(totalAmount);
+  const parsedBudget = Number(budget);
+
+  if (!Number.isFinite(parsedBudget) || parsedBudget <= 0) {
+    return {
+      amountClassName: "text-foreground",
+      budgetLeft: null as number | null,
+      shouldShowWarning: false,
+    };
+  }
+
+  const budgetLeft = parsedBudget - total;
+
+  if (budgetLeft < 0) {
+    return {
+      amountClassName: "text-red-600 dark:text-red-400",
+      budgetLeft,
+      shouldShowWarning: true,
+    };
+  }
+
+  if (budgetLeft / parsedBudget <= 0.15) {
+    return {
+      amountClassName: "text-orange-500 dark:text-orange-400",
+      budgetLeft,
+      shouldShowWarning: true,
+    };
+  }
+
+  return {
+    amountClassName: "text-foreground",
+    budgetLeft,
+    shouldShowWarning: false,
+  };
 }
 
 export function TransactionsContent({
@@ -63,7 +115,7 @@ export function TransactionsContent({
       const [categoriesResult, transactionsResult] = await Promise.all([
         supabase
           .from("categories")
-          .select("id, name, icon, type")
+          .select("id, name, icon, type, budget")
           .eq("sheet_id", sheetId)
           .eq("type", selectedType)
           .order("name", { ascending: true }),
@@ -126,6 +178,10 @@ export function TransactionsContent({
         ) : (
           overviewQuery.data?.map((category) => {
             const Icon = getLucideIcon(category.icon) || LayoutGrid;
+            const { amountClassName, budgetLeft, shouldShowWarning } = getBudgetStatus(
+              category.totalAmount,
+              category.budget,
+            );
             const params = new URLSearchParams({
               month: selectedMonth.toString(),
               year: selectedYear.toString(),
@@ -151,12 +207,45 @@ export function TransactionsContent({
                       </div>
                       <p className="font-medium">{category.name}</p>
                     </div>
-                    <div className="font-bold text-foreground">
-                      <FormattedAmount
-                        amount={category.totalAmount}
-                        showSign={false}
-                        currency={currency}
-                      />
+                    <div className="text-right">
+                      <div
+                        className={`flex items-center justify-end gap-1 font-bold ${amountClassName}`}
+                      >
+                        <FormattedAmount
+                          amount={category.totalAmount}
+                          showSign={false}
+                          currency={currency}
+                        />
+                        {category.budget && budgetLeft !== null && shouldShowWarning ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center">
+                                  <AlertTriangle className="h-4 w-4" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {budgetLeft < 0 ? "Budget exceeded by " : "Budget left: "}
+                                <FormattedAmount
+                                  amount={Math.abs(budgetLeft)}
+                                  showSign={false}
+                                  currency={currency}
+                                />
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : null}
+                      </div>
+                      {category.budget ? (
+                        <div className="text-xs text-muted-foreground">
+                          <FormattedAmount
+                            amount={category.budget}
+                            showSign={false}
+                            currency={currency}
+                          />{" "}
+                          budget
+                        </div>
+                      ) : null}
                     </div>
                   </CardContent>
                 </Card>

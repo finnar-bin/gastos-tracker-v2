@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useId, useMemo, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,9 +14,25 @@ import {
 type SearchableSelectOption = {
   value: string;
   label: string;
+  searchText?: string;
 };
 
-export function SearchableSelect({
+type SearchableSelectProps<TOption extends SearchableSelectOption> = {
+  name?: string;
+  value: string;
+  options: TOption[];
+  placeholder?: string;
+  searchPlaceholder?: string;
+  emptyMessage?: string;
+  disabled?: boolean;
+  required?: boolean;
+  className?: string;
+  onValueChangeAction: (value: string) => void;
+  renderOptionAction?: (option: TOption) => ReactNode;
+  renderValueAction?: (option: TOption) => ReactNode;
+};
+
+export function SearchableSelect<TOption extends SearchableSelectOption>({
   name,
   value,
   options,
@@ -23,19 +40,12 @@ export function SearchableSelect({
   searchPlaceholder = "Search...",
   emptyMessage = "No results found.",
   disabled = false,
+  required = false,
   className,
-  onValueChange,
-}: {
-  name?: string;
-  value: string;
-  options: SearchableSelectOption[];
-  placeholder?: string;
-  searchPlaceholder?: string;
-  emptyMessage?: string;
-  disabled?: boolean;
-  className?: string;
-  onValueChange: (value: string) => void;
-}) {
+  onValueChangeAction,
+  renderOptionAction,
+  renderValueAction,
+}: SearchableSelectProps<TOption>) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const listboxId = useId();
@@ -46,8 +56,9 @@ export function SearchableSelect({
     if (!query.trim()) return options;
     const normalizedQuery = query.trim().toLowerCase();
     return options.filter((option) => {
+      const haystack = option.searchText ?? `${option.label} ${option.value}`;
       return (
-        option.label.toLowerCase().includes(normalizedQuery) ||
+        haystack.toLowerCase().includes(normalizedQuery) ||
         option.value.toLowerCase().includes(normalizedQuery)
       );
     });
@@ -55,7 +66,7 @@ export function SearchableSelect({
 
   return (
     <>
-      {name ? <input type="hidden" name={name} value={value} /> : null}
+      {name ? <input type="hidden" name={name} value={value} required={required} /> : null}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
@@ -70,8 +81,10 @@ export function SearchableSelect({
               className,
             )}
           >
-            <span className="truncate">
-              {selectedOption ? selectedOption.label : value || placeholder}
+            <span className="min-w-0 flex-1 truncate text-left">
+              {selectedOption
+                ? (renderValueAction?.(selectedOption) ?? selectedOption.label)
+                : value || placeholder}
             </span>
             <ChevronDown className="size-4 opacity-50" />
           </button>
@@ -106,7 +119,7 @@ export function SearchableSelect({
                       role="option"
                       aria-selected={isSelected}
                       onClick={() => {
-                        onValueChange(option.value);
+                        onValueChangeAction(option.value);
                         setOpen(false);
                         setQuery("");
                       }}
@@ -115,7 +128,9 @@ export function SearchableSelect({
                         isSelected && "bg-accent text-accent-foreground",
                       )}
                     >
-                      <span className="truncate">{option.label}</span>
+                      <span className="min-w-0 flex-1 truncate">
+                        {renderOptionAction?.(option) ?? option.label}
+                      </span>
                       {isSelected ? (
                         <Check className="size-4 shrink-0" />
                       ) : null}

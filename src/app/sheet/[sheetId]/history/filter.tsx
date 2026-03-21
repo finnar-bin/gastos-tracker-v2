@@ -1,5 +1,6 @@
 "use client";
 
+import { CategoryPicker } from "@/components/category-picker";
 import {
   Select,
   SelectContent,
@@ -129,24 +130,17 @@ export function HistoryFilter({
           </Select>
         </div>
         <div>
-          <Select
+          <CategoryPicker
+            categories={categories}
+            includeAllOption
+            allOptionLabel="All Categories"
+            allOptionValue="all"
+            placeholder="Category"
             value={categoryId ?? "all"}
-            onValueChange={(val) =>
+            onValueChangeAction={(val) =>
               navigateWithFilters({ nextCategoryId: val })
             }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          />
         </div>
       </div>
     </>

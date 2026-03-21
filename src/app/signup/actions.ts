@@ -12,7 +12,7 @@ function getSafeNextPath(next: string | null) {
   return next;
 }
 
-export async function signup(previousState: unknown, formData: FormData) {
+export async function signup(_previousState: unknown, formData: FormData) {
   const supabase = await createClient();
 
   const email = formData.get("email") as string;

@@ -7,7 +7,9 @@ import {
   deleteRecurringTransaction,
 } from "../[recurringId]/edit/actions";
 import { Button } from "@/components/ui/button";
+import { CategoryPicker } from "@/components/category-picker";
 import { LoadingButton } from "@/components/loading-button";
+import { PaymentTypePicker } from "@/components/payment-type-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -31,7 +33,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getLucideIcon } from "@/lib/lucide-icons";
 
 interface Category {
   id: string;
@@ -178,7 +179,7 @@ export default function RecurringTransactionForm({
                 value={transactionType}
                 onValueChange={handleTypeChange}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -190,29 +191,14 @@ export default function RecurringTransactionForm({
 
             <div className="space-y-2">
               <Label htmlFor="categoryId">Category</Label>
-              <Select
+              <CategoryPicker
+                categories={filteredCategories}
                 name="categoryId"
                 value={resolvedCategoryId}
-                onValueChange={handleCategoryChange}
+                onValueChangeAction={handleCategoryChange}
+                placeholder="Select category"
                 required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredCategories.map((cat) => {
-                    const Icon = getLucideIcon(cat.icon);
-                    return (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        <div className="flex items-center gap-2">
-                          {Icon && <Icon className="w-4 h-4" />}
-                          <span>{cat.name}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              />
             </div>
 
             <div className="space-y-2">
@@ -232,28 +218,12 @@ export default function RecurringTransactionForm({
             {transactionType === "expense" && (
               <div className="space-y-2">
                 <Label htmlFor="paymentType">Payment Type</Label>
-                <Select
+                <PaymentTypePicker
+                  paymentTypes={paymentTypes}
                   name="paymentType"
                   defaultValue={initialData?.paymentType}
                   required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentTypes.map((pt) => {
-                      const Icon = getLucideIcon(pt.icon);
-                      return (
-                        <SelectItem key={pt.id} value={pt.id}>
-                          <div className="flex items-center gap-2">
-                            {Icon && <Icon className="w-4 h-4" />}
-                            <span>{pt.name}</span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                />
               </div>
             )}
 
@@ -264,7 +234,7 @@ export default function RecurringTransactionForm({
                 defaultValue={initialData?.frequency ?? "monthly"}
                 onValueChange={(val) => setFrequency(val)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select frequency" />
                 </SelectTrigger>
                 <SelectContent>

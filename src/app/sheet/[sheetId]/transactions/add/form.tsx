@@ -11,17 +11,11 @@ import { LoadingButton } from "@/components/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { ReceiptText } from "lucide-react";
-import { getLucideIcon } from "@/lib/lucide-icons";
+import { CategoryPicker } from "@/components/category-picker";
+import { PaymentTypePicker } from "@/components/payment-type-picker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -128,29 +122,14 @@ export default function TransactionForm({
 
             <div className="space-y-2">
               <Label htmlFor="categoryId">Category</Label>
-              <Select
+              <CategoryPicker
+                categories={categories}
                 name="categoryId"
                 defaultValue={initialData?.categoryId}
-                onValueChange={handleCategoryChange}
+                onValueChangeAction={handleCategoryChange}
+                placeholder="Select category"
                 required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => {
-                    const Icon = getLucideIcon(cat.icon);
-                    return (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        <div className="flex items-center gap-2">
-                          {Icon && <Icon className="h-4 w-4" />}
-                          <span>{cat.name}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              />
             </div>
 
             <div className="space-y-2">
@@ -171,28 +150,12 @@ export default function TransactionForm({
             {isExpense && (
               <div className="space-y-2">
                 <Label htmlFor="paymentType">Payment Type</Label>
-                <Select
+                <PaymentTypePicker
+                  paymentTypes={paymentTypes}
                   name="paymentType"
                   defaultValue={initialData?.paymentType ?? undefined}
                   required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentTypes.map((pt) => {
-                      const Icon = getLucideIcon(pt.icon);
-                      return (
-                        <SelectItem key={pt.id} value={pt.id}>
-                          <div className="flex items-center gap-2">
-                            {Icon && <Icon className="w-4 h-4" />}
-                            <span>{pt.name}</span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                />
               </div>
             )}
 
