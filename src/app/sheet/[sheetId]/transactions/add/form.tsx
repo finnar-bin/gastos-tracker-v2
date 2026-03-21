@@ -21,6 +21,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { ReceiptText } from "lucide-react";
+import { CategoryPicker } from "@/components/category-picker";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import {
   AlertDialog,
@@ -128,29 +129,14 @@ export default function TransactionForm({
 
             <div className="space-y-2">
               <Label htmlFor="categoryId">Category</Label>
-              <Select
+              <CategoryPicker
+                categories={categories}
                 name="categoryId"
                 defaultValue={initialData?.categoryId}
                 onValueChange={handleCategoryChange}
+                placeholder="Select category"
                 required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => {
-                    const Icon = getLucideIcon(cat.icon);
-                    return (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        <div className="flex items-center gap-2">
-                          {Icon && <Icon className="h-4 w-4" />}
-                          <span>{cat.name}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              />
             </div>
 
             <div className="space-y-2">

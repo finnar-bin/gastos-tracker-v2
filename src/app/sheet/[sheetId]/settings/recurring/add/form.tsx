@@ -7,6 +7,7 @@ import {
   deleteRecurringTransaction,
 } from "../[recurringId]/edit/actions";
 import { Button } from "@/components/ui/button";
+import { CategoryPicker } from "@/components/category-picker";
 import { LoadingButton } from "@/components/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -190,29 +191,14 @@ export default function RecurringTransactionForm({
 
             <div className="space-y-2">
               <Label htmlFor="categoryId">Category</Label>
-              <Select
+              <CategoryPicker
+                categories={filteredCategories}
                 name="categoryId"
                 value={resolvedCategoryId}
                 onValueChange={handleCategoryChange}
+                placeholder="Select category"
                 required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredCategories.map((cat) => {
-                    const Icon = getLucideIcon(cat.icon);
-                    return (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        <div className="flex items-center gap-2">
-                          {Icon && <Icon className="w-4 h-4" />}
-                          <span>{cat.name}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              />
             </div>
 
             <div className="space-y-2">

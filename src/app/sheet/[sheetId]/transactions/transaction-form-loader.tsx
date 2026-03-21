@@ -45,22 +45,33 @@ export function TransactionFormLoader({
   transactionType?: "income" | "expense";
 }) {
   const transactionFormQuery = useQuery({
-    queryKey: ["sheet", sheetId, "transaction-form", mode, transactionId ?? "new", transactionType ?? "unknown"],
+    queryKey: [
+      "sheet",
+      sheetId,
+      "transaction-form",
+      mode,
+      transactionId ?? "new",
+      transactionType ?? "unknown",
+    ],
     queryFn: async () => {
       const [categoriesResult, paymentTypesResult, transactionResult] =
         await Promise.all([
           supabase
             .from("categories")
             .select("id, name, icon, type, default_amount")
-            .eq("sheet_id", sheetId),
+            .eq("sheet_id", sheetId)
+            .order("name", { ascending: true }),
           supabase
             .from("payment_types")
             .select("id, name, icon")
-            .eq("sheet_id", sheetId),
+            .eq("sheet_id", sheetId)
+            .order("name", { ascending: true }),
           mode === "edit" && transactionId
             ? supabase
                 .from("transactions")
-                .select("id, amount, type, description, date, category_id, payment_type_id")
+                .select(
+                  "id, amount, type, description, date, category_id, payment_type_id",
+                )
                 .eq("sheet_id", sheetId)
                 .eq("id", transactionId)
                 .maybeSingle()
@@ -86,7 +97,9 @@ export function TransactionFormLoader({
   if (transactionFormQuery.error) {
     return (
       <div className="rounded-xl border border-dashed p-6 text-center">
-        <p className="text-sm text-muted-foreground">Failed to load transaction form.</p>
+        <p className="text-sm text-muted-foreground">
+          Failed to load transaction form.
+        </p>
         <Button
           variant="outline"
           className="mt-4"
