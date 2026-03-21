@@ -154,7 +154,7 @@ export function TransactionsContent({
         type={selectedType}
       />
 
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1">
+      <div className="space-y-3">
         {overviewQuery.isLoading ? (
           Array.from({ length: 5 }, (_, idx) => (
             <div key={idx} className="h-20 rounded-xl bg-muted/40 animate-pulse" />
