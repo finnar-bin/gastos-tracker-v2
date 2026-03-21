@@ -7,6 +7,7 @@ import {
   deleteTransaction,
 } from "../[transactionId]/edit/actions";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { LoadingButton } from "@/components/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -161,10 +162,9 @@ export default function TransactionForm({
 
             <div className="space-y-2">
               <Label htmlFor="date">Transaction Date</Label>
-              <Input
+              <DateInput
                 id="date"
                 name="date"
-                type="date"
                 defaultValue={
                   initialData?.date ?? new Date().toISOString().split("T")[0]
                 }

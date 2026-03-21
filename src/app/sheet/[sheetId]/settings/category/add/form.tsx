@@ -4,6 +4,7 @@ import { useState } from "react";
 import { addCategory } from "./actions";
 import { updateCategory, deleteCategory } from "../[categoryId]/edit/actions";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { LoadingButton } from "@/components/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -202,10 +203,9 @@ export default function CategoryForm({
 
           <div className="space-y-2">
             <Label htmlFor="dueDate">Due Date (Optional)</Label>
-            <Input
+            <DateInput
               id="dueDate"
               name="dueDate"
-              type="date"
               defaultValue={initialData?.dueDate ?? ""}
             />
             <div className="flex items-start gap-2 mt-1 text-[10px] text-muted-foreground">
