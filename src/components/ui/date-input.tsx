@@ -42,10 +42,24 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
     const [internalValue, setInternalValue] = React.useState(
       typeof defaultValue === "string" ? defaultValue : "",
     );
+    const [useNativeTapTarget, setUseNativeTapTarget] = React.useState(false);
     const isControlled = typeof value === "string";
     const currentValue = isControlled ? value : internalValue;
 
     React.useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
+
+    React.useEffect(() => {
+      if (typeof navigator === "undefined") {
+        return;
+      }
+
+      const hasTouchPoints = (navigator.maxTouchPoints ?? 0) > 0;
+      const hasCoarsePointer =
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(pointer: coarse)").matches;
+
+      setUseNativeTapTarget(hasTouchPoints || Boolean(hasCoarsePointer));
+    }, []);
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       if (!isControlled) {
@@ -56,7 +70,7 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
     };
 
     const handleOpenPicker = () => {
-      if (disabled) {
+      if (disabled || useNativeTapTarget) {
         return;
       }
 
@@ -81,7 +95,10 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
           ref={inputRef}
           type="date"
           className={cn(
-            "pointer-events-none absolute inset-0 h-full w-full opacity-0",
+            "absolute inset-0 h-full w-full opacity-0",
+            useNativeTapTarget
+              ? "z-10 cursor-pointer"
+              : "pointer-events-none z-0",
             className,
           )}
           defaultValue={defaultValue}
