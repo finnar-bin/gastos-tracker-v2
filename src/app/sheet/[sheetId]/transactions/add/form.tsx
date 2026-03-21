@@ -126,7 +126,7 @@ export default function TransactionForm({
                 categories={categories}
                 name="categoryId"
                 defaultValue={initialData?.categoryId}
-                onValueChange={handleCategoryChange}
+                onValueChangeAction={handleCategoryChange}
                 placeholder="Select category"
                 required
               />

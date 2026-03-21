@@ -17,7 +17,22 @@ type SearchableSelectOption = {
   searchText?: string;
 };
 
-export function SearchableSelect({
+type SearchableSelectProps<TOption extends SearchableSelectOption> = {
+  name?: string;
+  value: string;
+  options: TOption[];
+  placeholder?: string;
+  searchPlaceholder?: string;
+  emptyMessage?: string;
+  disabled?: boolean;
+  required?: boolean;
+  className?: string;
+  onValueChangeAction: (value: string) => void;
+  renderOptionAction?: (option: TOption) => ReactNode;
+  renderValueAction?: (option: TOption) => ReactNode;
+};
+
+export function SearchableSelect<TOption extends SearchableSelectOption>({
   name,
   value,
   options,
@@ -27,23 +42,10 @@ export function SearchableSelect({
   disabled = false,
   required = false,
   className,
-  onValueChange,
-  renderOption,
-  renderValue,
-}: {
-  name?: string;
-  value: string;
-  options: SearchableSelectOption[];
-  placeholder?: string;
-  searchPlaceholder?: string;
-  emptyMessage?: string;
-  disabled?: boolean;
-  required?: boolean;
-  className?: string;
-  onValueChange: (value: string) => void;
-  renderOption?: (option: SearchableSelectOption) => ReactNode;
-  renderValue?: (option: SearchableSelectOption) => ReactNode;
-}) {
+  onValueChangeAction,
+  renderOptionAction,
+  renderValueAction,
+}: SearchableSelectProps<TOption>) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const listboxId = useId();
@@ -81,7 +83,7 @@ export function SearchableSelect({
           >
             <span className="min-w-0 flex-1 truncate text-left">
               {selectedOption
-                ? (renderValue?.(selectedOption) ?? selectedOption.label)
+                ? (renderValueAction?.(selectedOption) ?? selectedOption.label)
                 : value || placeholder}
             </span>
             <ChevronDown className="size-4 opacity-50" />
@@ -117,7 +119,7 @@ export function SearchableSelect({
                       role="option"
                       aria-selected={isSelected}
                       onClick={() => {
-                        onValueChange(option.value);
+                        onValueChangeAction(option.value);
                         setOpen(false);
                         setQuery("");
                       }}
@@ -127,7 +129,7 @@ export function SearchableSelect({
                       )}
                     >
                       <span className="min-w-0 flex-1 truncate">
-                        {renderOption?.(option) ?? option.label}
+                        {renderOptionAction?.(option) ?? option.label}
                       </span>
                       {isSelected ? (
                         <Check className="size-4 shrink-0" />

@@ -17,7 +17,7 @@ type PaymentTypePickerProps = {
   name?: string;
   value?: string;
   defaultValue?: string;
-  onValueChange?: (value: string) => void;
+  onValueChangeAction?: (value: string) => void;
   required?: boolean;
   disabled?: boolean;
   triggerClassName?: string;
@@ -29,7 +29,7 @@ export function PaymentTypePicker({
   name,
   value,
   defaultValue,
-  onValueChange,
+  onValueChangeAction,
   required,
   disabled = false,
   triggerClassName,
@@ -60,14 +60,14 @@ export function PaymentTypePicker({
     if (!isControlled) {
       setInternalValue(nextValue);
     }
-    onValueChange?.(nextValue);
+    onValueChangeAction?.(nextValue);
   };
 
   return (
     <SearchableSelect
       name={name}
       value={resolvedValue}
-      onValueChange={handleValueChange}
+      onValueChangeAction={handleValueChange}
       options={options}
       placeholder={placeholder}
       searchPlaceholder="Search payment type..."
@@ -75,7 +75,7 @@ export function PaymentTypePicker({
       className={triggerClassName}
       disabled={disabled}
       required={required}
-      renderOption={(option) => {
+      renderOptionAction={(option) => {
         const Icon =
           "icon" in option && option.icon
             ? (getLucideIcon(option.icon) ?? CreditCard)
@@ -88,7 +88,7 @@ export function PaymentTypePicker({
           </span>
         );
       }}
-      renderValue={(option) => {
+      renderValueAction={(option) => {
         const Icon =
           "icon" in option && option.icon
             ? (getLucideIcon(option.icon) ?? CreditCard)

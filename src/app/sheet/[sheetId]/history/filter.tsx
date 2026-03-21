@@ -137,7 +137,7 @@ export function HistoryFilter({
             allOptionValue="all"
             placeholder="Category"
             value={categoryId ?? "all"}
-            onValueChange={(val) =>
+            onValueChangeAction={(val) =>
               navigateWithFilters({ nextCategoryId: val })
             }
           />

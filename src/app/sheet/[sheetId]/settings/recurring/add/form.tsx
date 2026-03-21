@@ -195,7 +195,7 @@ export default function RecurringTransactionForm({
                 categories={filteredCategories}
                 name="categoryId"
                 value={resolvedCategoryId}
-                onValueChange={handleCategoryChange}
+                onValueChangeAction={handleCategoryChange}
                 placeholder="Select category"
                 required
               />

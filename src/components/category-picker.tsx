@@ -17,7 +17,7 @@ type CategoryPickerProps = {
   name?: string;
   value?: string;
   defaultValue?: string;
-  onValueChange?: (value: string) => void;
+  onValueChangeAction?: (value: string) => void;
   required?: boolean;
   triggerClassName?: string;
   includeAllOption?: boolean;
@@ -32,7 +32,7 @@ export function CategoryPicker({
   name,
   value,
   defaultValue,
-  onValueChange,
+  onValueChangeAction,
   triggerClassName,
   includeAllOption = false,
   allOptionLabel = "All Categories",
@@ -74,21 +74,21 @@ export function CategoryPicker({
     if (!isControlled) {
       setInternalValue(nextValue);
     }
-    onValueChange?.(nextValue);
+    onValueChangeAction?.(nextValue);
   };
 
   return (
     <SearchableSelect
       name={name}
       value={resolvedValue}
-      onValueChange={handleValueChange}
+      onValueChangeAction={handleValueChange}
       options={options}
       placeholder={placeholder}
       searchPlaceholder="Search category..."
       emptyMessage="No categories found."
       className={triggerClassName}
       disabled={disabled}
-      renderOption={(option) => {
+      renderOptionAction={(option) => {
         const Icon = "icon" in option && option.icon
           ? (getLucideIcon(option.icon) ?? LayoutGrid)
           : null;
@@ -100,7 +100,7 @@ export function CategoryPicker({
           </span>
         );
       }}
-      renderValue={(option) => {
+      renderValueAction={(option) => {
         const Icon = "icon" in option && option.icon
           ? (getLucideIcon(option.icon) ?? LayoutGrid)
           : null;

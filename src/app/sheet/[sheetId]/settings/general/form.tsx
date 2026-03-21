@@ -124,7 +124,7 @@ export function GeneralSettingsForm({
             <SearchableSelect
               name="currency"
               value={currency}
-              onValueChange={setCurrency}
+              onValueChangeAction={setCurrency}
               options={currencyOptions}
               placeholder="Select a currency"
               searchPlaceholder="Search currency..."
