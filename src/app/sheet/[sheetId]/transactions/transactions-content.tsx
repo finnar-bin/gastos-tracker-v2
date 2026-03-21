@@ -16,6 +16,7 @@ type CategoryRow = {
   name: string;
   icon: string;
   type: "income" | "expense";
+  budget: string | null;
 };
 
 type TransactionRow = {
@@ -63,7 +64,7 @@ export function TransactionsContent({
       const [categoriesResult, transactionsResult] = await Promise.all([
         supabase
           .from("categories")
-          .select("id, name, icon, type")
+          .select("id, name, icon, type, budget")
           .eq("sheet_id", sheetId)
           .eq("type", selectedType)
           .order("name", { ascending: true }),
@@ -151,12 +152,24 @@ export function TransactionsContent({
                       </div>
                       <p className="font-medium">{category.name}</p>
                     </div>
-                    <div className="font-bold text-foreground">
-                      <FormattedAmount
-                        amount={category.totalAmount}
-                        showSign={false}
-                        currency={currency}
-                      />
+                    <div className="text-right">
+                      <div className="font-bold text-foreground">
+                        <FormattedAmount
+                          amount={category.totalAmount}
+                          showSign={false}
+                          currency={currency}
+                        />
+                      </div>
+                      {category.budget ? (
+                        <div className="text-xs text-muted-foreground">
+                          <FormattedAmount
+                            amount={category.budget}
+                            showSign={false}
+                            currency={currency}
+                          />{" "}
+                          budget
+                        </div>
+                      ) : null}
                     </div>
                   </CardContent>
                 </Card>
