@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CategoryPicker } from "@/components/category-picker";
 import { LoadingButton } from "@/components/loading-button";
+import { PaymentTypePicker } from "@/components/payment-type-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -32,7 +33,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getLucideIcon } from "@/lib/lucide-icons";
 
 interface Category {
   id: string;
@@ -218,28 +218,12 @@ export default function RecurringTransactionForm({
             {transactionType === "expense" && (
               <div className="space-y-2">
                 <Label htmlFor="paymentType">Payment Type</Label>
-                <Select
+                <PaymentTypePicker
+                  paymentTypes={paymentTypes}
                   name="paymentType"
                   defaultValue={initialData?.paymentType}
                   required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentTypes.map((pt) => {
-                      const Icon = getLucideIcon(pt.icon);
-                      return (
-                        <SelectItem key={pt.id} value={pt.id}>
-                          <div className="flex items-center gap-2">
-                            {Icon && <Icon className="w-4 h-4" />}
-                            <span>{pt.name}</span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                />
               </div>
             )}
 
