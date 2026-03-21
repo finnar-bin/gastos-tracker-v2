@@ -25,6 +25,7 @@ export function SearchableSelect({
   searchPlaceholder = "Search...",
   emptyMessage = "No results found.",
   disabled = false,
+  required = false,
   className,
   onValueChange,
   renderOption,
@@ -37,6 +38,7 @@ export function SearchableSelect({
   searchPlaceholder?: string;
   emptyMessage?: string;
   disabled?: boolean;
+  required?: boolean;
   className?: string;
   onValueChange: (value: string) => void;
   renderOption?: (option: SearchableSelectOption) => ReactNode;
@@ -62,7 +64,7 @@ export function SearchableSelect({
 
   return (
     <>
-      {name ? <input type="hidden" name={name} value={value} /> : null}
+      {name ? <input type="hidden" name={name} value={value} required={required} /> : null}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
