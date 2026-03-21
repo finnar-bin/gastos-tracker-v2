@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useId, useMemo, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,7 @@ import {
 type SearchableSelectOption = {
   value: string;
   label: string;
+  searchText?: string;
 };
 
 export function SearchableSelect({
@@ -25,6 +27,8 @@ export function SearchableSelect({
   disabled = false,
   className,
   onValueChange,
+  renderOption,
+  renderValue,
 }: {
   name?: string;
   value: string;
@@ -35,6 +39,8 @@ export function SearchableSelect({
   disabled?: boolean;
   className?: string;
   onValueChange: (value: string) => void;
+  renderOption?: (option: SearchableSelectOption) => ReactNode;
+  renderValue?: (option: SearchableSelectOption) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -46,8 +52,9 @@ export function SearchableSelect({
     if (!query.trim()) return options;
     const normalizedQuery = query.trim().toLowerCase();
     return options.filter((option) => {
+      const haystack = option.searchText ?? `${option.label} ${option.value}`;
       return (
-        option.label.toLowerCase().includes(normalizedQuery) ||
+        haystack.toLowerCase().includes(normalizedQuery) ||
         option.value.toLowerCase().includes(normalizedQuery)
       );
     });
@@ -70,8 +77,10 @@ export function SearchableSelect({
               className,
             )}
           >
-            <span className="truncate">
-              {selectedOption ? selectedOption.label : value || placeholder}
+            <span className="min-w-0 flex-1 truncate text-left">
+              {selectedOption
+                ? (renderValue?.(selectedOption) ?? selectedOption.label)
+                : value || placeholder}
             </span>
             <ChevronDown className="size-4 opacity-50" />
           </button>
@@ -115,7 +124,9 @@ export function SearchableSelect({
                         isSelected && "bg-accent text-accent-foreground",
                       )}
                     >
-                      <span className="truncate">{option.label}</span>
+                      <span className="min-w-0 flex-1 truncate">
+                        {renderOption?.(option) ?? option.label}
+                      </span>
                       {isSelected ? (
                         <Check className="size-4 shrink-0" />
                       ) : null}

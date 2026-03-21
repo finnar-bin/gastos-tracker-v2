@@ -1,15 +1,9 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { LayoutGrid } from "lucide-react";
+import { SearchableSelect } from "@/components/searchable-select";
 import { getLucideIcon } from "@/lib/lucide-icons";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 
 export type CategoryPickerOption = {
   id: string;
@@ -29,6 +23,7 @@ type CategoryPickerProps = {
   includeAllOption?: boolean;
   allOptionLabel?: string;
   allOptionValue?: string;
+  disabled?: boolean;
 };
 
 export function CategoryPicker({
@@ -38,39 +33,85 @@ export function CategoryPicker({
   value,
   defaultValue,
   onValueChange,
-  required,
   triggerClassName,
   includeAllOption = false,
   allOptionLabel = "All Categories",
   allOptionValue = "all",
+  disabled = false,
 }: CategoryPickerProps) {
+  const isControlled = value !== undefined;
+  const [internalValue, setInternalValue] = useState(defaultValue ?? "");
+
+  useEffect(() => {
+    if (!isControlled) {
+      setInternalValue(defaultValue ?? "");
+    }
+  }, [defaultValue, isControlled]);
+
+  const resolvedValue = isControlled ? value : internalValue;
+
+  const options = useMemo(() => {
+    const categoryOptions = categories.map((category) => ({
+      value: category.id,
+      label: category.name,
+      icon: category.icon,
+      searchText: category.name,
+    }));
+
+    return includeAllOption
+      ? [
+          {
+            value: allOptionValue,
+            label: allOptionLabel,
+            searchText: allOptionLabel,
+          },
+          ...categoryOptions,
+        ]
+      : categoryOptions;
+  }, [allOptionLabel, allOptionValue, categories, includeAllOption]);
+
+  const handleValueChange = (nextValue: string) => {
+    if (!isControlled) {
+      setInternalValue(nextValue);
+    }
+    onValueChange?.(nextValue);
+  };
+
   return (
-    <Select
+    <SearchableSelect
       name={name}
-      value={value}
-      defaultValue={defaultValue}
-      onValueChange={onValueChange}
-      required={required}
-    >
-      <SelectTrigger className={cn("w-full", triggerClassName)}>
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        {includeAllOption ? (
-          <SelectItem value={allOptionValue}>{allOptionLabel}</SelectItem>
-        ) : null}
-        {categories.map((category) => {
-          const Icon = category.icon ? (getLucideIcon(category.icon) ?? LayoutGrid) : null;
-          return (
-            <SelectItem key={category.id} value={category.id}>
-              <div className="flex items-center gap-2">
-                {Icon ? <Icon className="h-4 w-4" /> : null}
-                <span>{category.name}</span>
-              </div>
-            </SelectItem>
-          );
-        })}
-      </SelectContent>
-    </Select>
+      value={resolvedValue}
+      onValueChange={handleValueChange}
+      options={options}
+      placeholder={placeholder}
+      searchPlaceholder="Search category..."
+      emptyMessage="No categories found."
+      className={triggerClassName}
+      disabled={disabled}
+      renderOption={(option) => {
+        const Icon = "icon" in option && option.icon
+          ? (getLucideIcon(option.icon) ?? LayoutGrid)
+          : null;
+
+        return (
+          <span className="flex items-center gap-2">
+            {Icon ? <Icon className="h-4 w-4 shrink-0" /> : null}
+            <span className="truncate">{option.label}</span>
+          </span>
+        );
+      }}
+      renderValue={(option) => {
+        const Icon = "icon" in option && option.icon
+          ? (getLucideIcon(option.icon) ?? LayoutGrid)
+          : null;
+
+        return (
+          <span className="flex items-center gap-2">
+            {Icon ? <Icon className="h-4 w-4 shrink-0" /> : null}
+            <span className="truncate">{option.label}</span>
+          </span>
+        );
+      }}
+    />
   );
 }
