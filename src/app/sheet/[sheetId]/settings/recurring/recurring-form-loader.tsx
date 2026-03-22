@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { queryKeys } from "@/lib/query-keys";
 import { createClient } from "@/lib/supabase/client";
 import RecurringTransactionForm, {
   type RecurringTransactionData,
@@ -44,7 +45,7 @@ export function RecurringFormLoader({
   recurringId?: string;
 }) {
   const recurringFormQuery = useQuery({
-    queryKey: ["sheet", sheetId, "recurring-form", mode, recurringId ?? "new"],
+    queryKey: queryKeys.recurringForm(sheetId, mode, recurringId ?? "new"),
     queryFn: async () => {
       const [categoriesResult, paymentTypesResult, recurringResult] =
         await Promise.all([

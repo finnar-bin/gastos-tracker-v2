@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { queryKeys } from "@/lib/query-keys";
 import { createClient } from "@/lib/supabase/client";
 import PaymentTypeForm, { type PaymentTypeFormData } from "./add/form";
 
@@ -21,7 +22,7 @@ export function PaymentTypeFormLoader({
   paymentTypeId: string;
 }) {
   const paymentTypeQuery = useQuery({
-    queryKey: ["sheet", sheetId, "payment-type-form", paymentTypeId],
+    queryKey: queryKeys.paymentTypeForm(sheetId, paymentTypeId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("payment_types")

@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useActionState, useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signup } from "./actions";
 import { LoadingButton } from "@/components/loading-button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Eye, EyeOff } from "lucide-react";
+import type { FormErrors } from "@/lib/form-state";
 
 export default function SignupPage() {
   return (
@@ -43,10 +44,46 @@ function SignupPageFallback() {
 }
 
 function SignupPageContent() {
-  const [state, action, isPending] = useActionState(signup, null);
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
+  const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/sheet";
+
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setFormError(null);
+    setFieldErrors({});
+
+    try {
+      const result = await signup(new FormData(event.currentTarget));
+
+      if (result.defaultValues) {
+        setDisplayName(result.defaultValues.displayName);
+        setEmail(result.defaultValues.email);
+        setPassword(result.defaultValues.password);
+      }
+
+      if (result.redirectTo) {
+        router.push(result.redirectTo);
+        return;
+      }
+
+      setFormError(result.error ?? "Unable to create your account.");
+      setFieldErrors(result.fieldErrors ?? {});
+    } catch (error) {
+      console.error("Signup failed:", error);
+      setFormError("Something went wrong while creating your account.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 section-padding">
@@ -60,8 +97,13 @@ function SignupPageContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={action} className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4">
             <input type="hidden" name="next" value={next} />
+            {formError ? (
+              <div className="text-sm font-medium text-destructive">
+                {formError}
+              </div>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="displayName">Display Name</Label>
               <Input
@@ -69,9 +111,16 @@ function SignupPageContent() {
                 name="displayName"
                 type="text"
                 placeholder="John Doe"
-                defaultValue={state?.defaultValues?.displayName}
+                value={displayName}
+                onChange={(event) => setDisplayName(event.target.value)}
                 required
+                aria-invalid={Boolean(fieldErrors.displayName)}
               />
+              {fieldErrors.displayName ? (
+                <p className="text-xs font-medium text-destructive">
+                  {fieldErrors.displayName}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -80,9 +129,16 @@ function SignupPageContent() {
                 name="email"
                 type="email"
                 placeholder="m@example.com"
-                defaultValue={state?.defaultValues?.email}
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
                 required
+                aria-invalid={Boolean(fieldErrors.email)}
               />
+              {fieldErrors.email ? (
+                <p className="text-xs font-medium text-destructive">
+                  {fieldErrors.email}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -91,9 +147,11 @@ function SignupPageContent() {
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
-                  defaultValue={state?.defaultValues?.password}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
                   required
                   minLength={6}
+                  aria-invalid={Boolean(fieldErrors.password)}
                 />
                 <button
                   type="button"
@@ -108,22 +166,21 @@ function SignupPageContent() {
                   )}
                 </button>
               </div>
+              {fieldErrors.password ? (
+                <p className="text-xs font-medium text-destructive">
+                  {fieldErrors.password}
+                </p>
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 Must be at least 6 characters long
               </p>
             </div>
 
-            {state?.error && (
-              <div className="text-sm text-red-500 font-medium">
-                {state.error}
-              </div>
-            )}
-
             <LoadingButton
               className="w-full cursor-pointer"
               text="Sign Up"
               loadingText="Signing up..."
-              loading={isPending}
+              loading={loading}
               trackFormStatus={false}
             />
           </form>

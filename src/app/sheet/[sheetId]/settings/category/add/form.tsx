@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { addCategory } from "./actions";
 import { updateCategory, deleteCategory } from "../[categoryId]/edit/actions";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { Info, LayoutGrid } from "lucide-react";
 import { IconPicker } from "@/components/icon-picker";
+import type { FormErrors } from "@/lib/form-state";
 
 export const AVAILABLE_ICONS = [
   // Food & Drinks
@@ -120,12 +122,65 @@ export default function CategoryForm({
   initialType = "expense",
   returnType = initialData?.type ?? initialType,
 }: CategoryFormProps) {
+  const router = useRouter();
   const [selectedIcon, setSelectedIcon] = useState(initialData?.icon ?? "");
   const [dueReminderFrequency, setDueReminderFrequency] = useState<
     "none" | "specific_date" | "daily" | "weekly" | "monthly"
   >(initialData?.dueReminderFrequency ?? "none");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
+  const [loading, setLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const formAction = mode === "edit" ? updateCategory : addCategory;
+  const getFieldError = (field: string) => fieldErrors[field];
+
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setFormError(null);
+    setFieldErrors({});
+
+    try {
+      const result = await formAction(new FormData(event.currentTarget));
+
+      if (result.redirectTo) {
+        router.push(result.redirectTo);
+        return;
+      }
+
+      setFormError(result.error ?? "Please review the form and try again.");
+      setFieldErrors(result.fieldErrors ?? {});
+    } catch (error) {
+      console.error("Category form submission failed:", error);
+      setFormError("Something went wrong while saving the category.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onDelete(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setDeleteLoading(true);
+    setDeleteError(null);
+
+    try {
+      const result = await deleteCategory(new FormData(event.currentTarget));
+
+      if (result.redirectTo) {
+        router.push(result.redirectTo);
+        return;
+      }
+
+      setDeleteError(result.error ?? "Failed to delete category.");
+    } catch (error) {
+      console.error("Category delete failed:", error);
+      setDeleteError("Something went wrong while deleting the category.");
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
 
   return (
     <Card>
@@ -135,13 +190,19 @@ export default function CategoryForm({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form action={formAction} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-4">
           <input type="hidden" name="sheetId" value={sheetId} />
           <input type="hidden" name="icon" value={selectedIcon} />
           <input type="hidden" name="returnType" value={returnType} />
           {mode === "edit" && initialData && (
             <input type="hidden" name="categoryId" value={initialData.id} />
           )}
+
+          {formError ? (
+            <p className="text-sm font-medium text-destructive">
+              {formError}
+            </p>
+          ) : null}
 
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
@@ -151,7 +212,13 @@ export default function CategoryForm({
               placeholder="e.g. Food & Drinks"
               defaultValue={initialData?.name ?? ""}
               required
+              aria-invalid={Boolean(getFieldError("name"))}
             />
+            {getFieldError("name") ? (
+              <p className="text-xs font-medium text-destructive">
+                {getFieldError("name")}
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
@@ -162,11 +229,15 @@ export default function CategoryForm({
               icons={AVAILABLE_ICONS}
               maxRows={5}
             />
-            {!selectedIcon && (
+            {getFieldError("icon") ? (
+              <p className="text-[10px] text-destructive font-medium">
+                {getFieldError("icon")}
+              </p>
+            ) : !selectedIcon ? (
               <p className="text-[10px] text-destructive font-medium">
                 Please select an icon for the category.
               </p>
-            )}
+            ) : null}
           </div>
 
           <div className="space-y-2">
@@ -180,6 +251,11 @@ export default function CategoryForm({
                 <SelectItem value="expense">Expense</SelectItem>
               </SelectContent>
             </Select>
+            {getFieldError("type") ? (
+              <p className="text-xs font-medium text-destructive">
+                {getFieldError("type")}
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
@@ -191,7 +267,13 @@ export default function CategoryForm({
               step="0.01"
               placeholder="0.00"
               defaultValue={initialData?.budget ?? ""}
+              aria-invalid={Boolean(getFieldError("budget"))}
             />
+            {getFieldError("budget") ? (
+              <p className="text-xs font-medium text-destructive">
+                {getFieldError("budget")}
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
@@ -203,7 +285,13 @@ export default function CategoryForm({
               step="0.01"
               placeholder="0.00"
               defaultValue={initialData?.defaultAmount ?? ""}
+              aria-invalid={Boolean(getFieldError("defaultAmount"))}
             />
+            {getFieldError("defaultAmount") ? (
+              <p className="text-xs font-medium text-destructive">
+                {getFieldError("defaultAmount")}
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
@@ -256,7 +344,11 @@ export default function CategoryForm({
           </div>
 
           <div className="pt-4 space-y-4">
-            <SubmitButton disabled={!selectedIcon} mode={mode} />
+            <SubmitButton
+              disabled={!selectedIcon}
+              loading={loading}
+              mode={mode}
+            />
             <Button variant="outline" className="w-full" asChild>
               <Link href={`/sheet/${sheetId}/settings/category?type=${returnType}`}>
                 Cancel
@@ -281,16 +373,22 @@ export default function CategoryForm({
                     the category and all associated data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+                {deleteError ? (
+                  <p className="text-sm font-medium text-destructive">
+                    {deleteError}
+                  </p>
+                ) : null}
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <form action={deleteCategory} className="mt-2 sm:mt-0">
+                  <form onSubmit={onDelete} className="mt-2 sm:mt-0">
                     <input type="hidden" name="sheetId" value={sheetId} />
                     <input
                       type="hidden"
                       name="categoryId"
                       value={initialData.id}
                     />
-                    <DeleteButton />
+                    <input type="hidden" name="returnType" value={returnType} />
+                    <DeleteButton loading={deleteLoading} />
                   </form>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -304,9 +402,11 @@ export default function CategoryForm({
 
 function SubmitButton({
   disabled,
+  loading = false,
   mode,
 }: {
   disabled: boolean;
+  loading?: boolean;
   mode: "add" | "edit";
 }) {
   return (
@@ -316,11 +416,17 @@ function SubmitButton({
       disabled={disabled}
       text={mode === "edit" ? "Save Changes" : "Create Category"}
       loadingText={mode === "edit" ? "Saving..." : "Creating..."}
+      loading={loading}
+      trackFormStatus={false}
     />
   );
 }
 
-function DeleteButton() {
+function DeleteButton({
+  loading = false,
+}: {
+  loading?: boolean;
+}) {
   return (
     <AlertDialogAction asChild variant="destructive">
       <LoadingButton
@@ -328,6 +434,8 @@ function DeleteButton() {
         variant="destructive"
         text="Confirm Delete"
         loadingText="Deleting..."
+        loading={loading}
+        trackFormStatus={false}
       />
     </AlertDialogAction>
   );

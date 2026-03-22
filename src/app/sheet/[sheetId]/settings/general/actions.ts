@@ -7,7 +7,6 @@ import { CURRENCY_CODES } from "@/lib/constants/currencies";
 import { revalidatePath } from "next/cache";
 import { requireSheetAccess, requireSheetPermission } from "@/lib/auth/sheets";
 import { eq } from "drizzle-orm";
-import { redirect } from "next/navigation";
 
 function normalizeCurrency(rawValue: string) {
   const trimmed = rawValue.trim().toUpperCase();
@@ -102,32 +101,39 @@ export async function upsertSheetCurrency(formData: FormData) {
   return { success: "Settings updated." };
 }
 
-export async function deleteSheet(formData: FormData): Promise<void> {
+export async function deleteSheet(
+  formData: FormData,
+): Promise<{ error?: string; redirectTo?: string }> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return;
+    return { redirectTo: "/login" };
   }
 
   const sheetId = formData.get("sheetId") as string;
   if (!sheetId) {
-    return;
+    return { error: "Invalid sheet." };
   }
 
   await requireSheetPermission(sheetId, "canDeleteSheet");
 
-  const deleteResult = await db
-    .delete(sheets)
-    .where(eq(sheets.id, sheetId))
-    .returning({ id: sheets.id });
+  try {
+    const deleteResult = await db
+      .delete(sheets)
+      .where(eq(sheets.id, sheetId))
+      .returning({ id: sheets.id });
 
-  if (!deleteResult[0]) {
-    return;
+    if (!deleteResult[0]) {
+      return { error: "Sheet not found or already deleted." };
+    }
+  } catch (error) {
+    console.error("Error deleting sheet:", error);
+    return { error: "Failed to delete sheet. Please try again." };
   }
 
   revalidatePath("/sheet");
-  redirect("/sheet");
+  return { redirectTo: "/sheet" };
 }

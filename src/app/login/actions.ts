@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-
 import { createClient } from "@/lib/supabase/server";
+import type { FormActionResult } from "@/lib/form-state";
 
 function getSafeNextPath(next: string | null) {
   if (!next) return "/sheet";
@@ -12,23 +12,51 @@ function getSafeNextPath(next: string | null) {
   return next;
 }
 
-export async function login(formData: FormData) {
+type LoginFormResult = FormActionResult & {
+  defaultValues?: {
+    email: string;
+  };
+};
+
+export async function login(formData: FormData): Promise<LoginFormResult> {
   const supabase = await createClient();
 
-  const data = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
-  };
+  const email = (formData.get("email") as string)?.trim() ?? "";
+  const password = (formData.get("password") as string) ?? "";
   const next = getSafeNextPath((formData.get("next") as string) || null);
+  const defaultValues = { email };
+  const fieldErrors: FormActionResult["fieldErrors"] = {};
 
-  const { error } = await supabase.auth.signInWithPassword(data);
+  if (!email) fieldErrors.email = "Email is required.";
+  if (!password) fieldErrors.password = "Password is required.";
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (email && !emailRegex.test(email)) {
+    fieldErrors.email = "Enter a valid email address.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return {
+      error: "Please fix the highlighted fields.",
+      fieldErrors,
+      defaultValues,
+    };
+  }
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
   if (error) {
-    redirect(`/login?error=true&next=${encodeURIComponent(next)}`);
+    return {
+      error: "Invalid email or password.",
+      defaultValues,
+    };
   }
 
   revalidatePath("/", "layout");
-  redirect(next);
+  return { redirectTo: next };
 }
 
 export async function loginWithGoogle(nextPath?: string) {

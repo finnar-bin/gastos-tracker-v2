@@ -7,89 +7,30 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormattedAmount } from "@/components/formatted-amount";
 import { getLucideIcon } from "@/lib/lucide-icons";
-import { createClient } from "@/lib/supabase/client";
-
-type RecurringRow = {
-  id: string;
-  amount: string;
-  type: "income" | "expense";
-  description: string | null;
-  frequency: string;
-  next_process_date: string;
-  is_active: boolean;
-  category_id: string;
-  payment_type_id: string | null;
-  created_at: string;
-};
-
-type CategoryRow = {
-  id: string;
-  name: string;
-  icon: string;
-};
-
-type PaymentTypeRow = {
-  id: string;
-  name: string;
-};
-
-const supabase = createClient();
+import { queryKeys } from "@/lib/query-keys";
+import { fetchRecurringOverview } from "@/lib/recurring-overview";
+import { fetchSheetCurrency } from "@/lib/sheet-currency";
 
 export function RecurringList({
   sheetId,
-  currency,
   canAddRecurringTransaction,
   canEditRecurringTransaction,
 }: {
   sheetId: string;
-  currency: string;
   canAddRecurringTransaction: boolean;
   canEditRecurringTransaction: boolean;
 }) {
   const recurringQuery = useQuery({
-    queryKey: ["sheet", sheetId, "recurring"],
-    queryFn: async () => {
-      const [recurringResult, categoriesResult, paymentTypesResult] =
-        await Promise.all([
-          supabase
-            .from("recurring_transactions")
-            .select(
-              "id, amount, type, description, frequency, next_process_date, is_active, category_id, payment_type_id, created_at",
-            )
-            .eq("sheet_id", sheetId)
-            .order("created_at", { ascending: false }),
-          supabase.from("categories").select("id, name, icon").eq("sheet_id", sheetId),
-          supabase.from("payment_types").select("id, name").eq("sheet_id", sheetId),
-        ]);
-
-      if (recurringResult.error) throw recurringResult.error;
-      if (categoriesResult.error) throw categoriesResult.error;
-      if (paymentTypesResult.error) throw paymentTypesResult.error;
-
-      const categoriesById = new Map(
-        ((categoriesResult.data ?? []) as CategoryRow[]).map((category) => [
-          category.id,
-          category,
-        ]),
-      );
-      const paymentTypesById = new Map(
-        ((paymentTypesResult.data ?? []) as PaymentTypeRow[]).map(
-          (paymentType) => [paymentType.id, paymentType],
-        ),
-      );
-
-      return ((recurringResult.data ?? []) as RecurringRow[]).map((rt) => ({
-        ...rt,
-        categoryName: categoriesById.get(rt.category_id)?.name ?? "Category",
-        categoryIcon: categoriesById.get(rt.category_id)?.icon ?? "LayoutGrid",
-        paymentTypeName: rt.payment_type_id
-          ? paymentTypesById.get(rt.payment_type_id)?.name ?? null
-          : null,
-      }));
-    },
+    queryKey: queryKeys.recurring(sheetId),
+    queryFn: () => fetchRecurringOverview(sheetId),
   });
+  const currencyQuery = useQuery({
+    queryKey: queryKeys.sheetCurrency(sheetId),
+    queryFn: () => fetchSheetCurrency(sheetId),
+  });
+  const currency = currencyQuery.data ?? "USD";
 
-  if (recurringQuery.isLoading) {
+  if (recurringQuery.isLoading || currencyQuery.isLoading) {
     return (
       <div className="space-y-4">
         {Array.from({ length: 4 }, (_, idx) => (
@@ -99,7 +40,7 @@ export function RecurringList({
     );
   }
 
-  if (recurringQuery.error) {
+  if (recurringQuery.error || currencyQuery.error) {
     return (
       <div className="rounded-xl border border-dashed p-6 text-center">
         <p className="text-sm text-muted-foreground">
@@ -108,7 +49,10 @@ export function RecurringList({
         <Button
           variant="outline"
           className="mt-4"
-          onClick={() => void recurringQuery.refetch()}
+          onClick={() => {
+            void recurringQuery.refetch();
+            void currencyQuery.refetch();
+          }}
         >
           Retry
         </Button>

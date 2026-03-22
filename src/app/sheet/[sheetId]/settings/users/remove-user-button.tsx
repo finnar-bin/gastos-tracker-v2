@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/loading-button";
@@ -14,6 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { queryKeys } from "@/lib/query-keys";
 import { removeSheetUser } from "./actions";
 
 type RemoveUserButtonProps = {
@@ -27,6 +30,20 @@ export function RemoveUserButton({
   targetUserId,
   targetLabel,
 }: RemoveUserButtonProps) {
+  const queryClient = useQueryClient();
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitting(true);
+
+    const formData = new FormData(event.currentTarget);
+    await removeSheetUser(formData);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.users(sheetId) });
+
+    setSubmitting(false);
+  }
+
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
@@ -45,12 +62,12 @@ export function RemoveUserButton({
             immediately lose access.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <form action={removeSheetUser}>
+        <form onSubmit={(event) => void handleSubmit(event)}>
           <input type="hidden" name="sheetId" value={sheetId} />
           <input type="hidden" name="targetUserId" value={targetUserId} />
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <ConfirmRemoveActionButton />
+            <ConfirmRemoveActionButton submitting={submitting} />
           </AlertDialogFooter>
         </form>
       </AlertDialogContent>
@@ -58,12 +75,13 @@ export function RemoveUserButton({
   );
 }
 
-function ConfirmRemoveActionButton() {
+function ConfirmRemoveActionButton({ submitting }: { submitting: boolean }) {
   return (
     <AlertDialogAction asChild variant="destructive">
       <LoadingButton
         type="submit"
         variant="destructive"
+        loading={submitting}
         text="Remove User"
         loadingText="Removing..."
       />

@@ -141,6 +141,48 @@
       "when": 1773300100000,
       "tag": "0019_drop_duplicate_select_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1774132800000,
+      "tag": "0020_sheet_member_directory",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1774136400000,
+      "tag": "0021_transaction_overview",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1774140000000,
+      "tag": "0022_history_feed",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1774143600000,
+      "tag": "0023_recurring_overview",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1774147200000,
+      "tag": "0024_dashboard_summary",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1774150800000,
+      "tag": "0025_category_transactions",
+      "breakpoints": true
     }
   ]
 }

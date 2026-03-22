@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/loading-button";
 import {
@@ -17,10 +17,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import { createSheet } from "./actions";
+import { queryKeys } from "@/lib/query-keys";
 import { toast } from "sonner";
 
 export function CreateSheetDialog() {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -38,7 +39,7 @@ export function CreateSheetDialog() {
     } else {
       toast.success("Sheet created successfully");
       setOpen(false);
-      router.refresh();
+      await queryClient.invalidateQueries({ queryKey: queryKeys.sheetSelector() });
     }
   }
 

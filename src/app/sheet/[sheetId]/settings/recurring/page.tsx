@@ -3,7 +3,6 @@ import { ArrowLeft, Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
-import { getSheetCurrency } from "@/lib/sheet-settings";
 import { RecurringList } from "./recurring-list";
 
 export default async function RecurringTransactionsPage({
@@ -12,10 +11,7 @@ export default async function RecurringTransactionsPage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  const [{ permissions, sheet }, sheetCurrency] = await Promise.all([
-    requireSheetAccess(sheetId),
-    getSheetCurrency(sheetId),
-  ]);
+  const { permissions, sheet } = await requireSheetAccess(sheetId);
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6 pb-24">
@@ -38,7 +34,6 @@ export default async function RecurringTransactionsPage({
 
       <RecurringList
         sheetId={sheetId}
-        currency={sheetCurrency}
         canAddRecurringTransaction={permissions.canAddRecurringTransaction}
         canEditRecurringTransaction={permissions.canEditRecurringTransaction}
       />

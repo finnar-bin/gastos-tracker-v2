@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CreditCard } from "lucide-react";
 import { addPaymentType } from "./actions";
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconPicker } from "@/components/icon-picker";
+import type { FormErrors } from "@/lib/form-state";
 
 export type PaymentTypeFormData = {
   id: string;
@@ -59,8 +61,61 @@ export default function PaymentTypeForm({
   mode?: "add" | "edit";
   initialData?: PaymentTypeFormData;
 }) {
+  const router = useRouter();
   const [selectedIcon, setSelectedIcon] = useState(initialData?.icon ?? "");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
+  const [loading, setLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const formAction = mode === "edit" ? updatePaymentType : addPaymentType;
+  const getFieldError = (field: string) => fieldErrors[field];
+
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setFormError(null);
+    setFieldErrors({});
+
+    try {
+      const result = await formAction(new FormData(event.currentTarget));
+
+      if (result.redirectTo) {
+        router.push(result.redirectTo);
+        return;
+      }
+
+      setFormError(result.error ?? "Please review the form and try again.");
+      setFieldErrors(result.fieldErrors ?? {});
+    } catch (error) {
+      console.error("Payment type form submission failed:", error);
+      setFormError("Something went wrong while saving the payment type.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onDelete(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setDeleteLoading(true);
+    setDeleteError(null);
+
+    try {
+      const result = await deletePaymentType(new FormData(event.currentTarget));
+
+      if (result.redirectTo) {
+        router.push(result.redirectTo);
+        return;
+      }
+
+      setDeleteError(result.error ?? "Failed to delete payment type.");
+    } catch (error) {
+      console.error("Payment type delete failed:", error);
+      setDeleteError("Something went wrong while deleting the payment type.");
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
 
   return (
     <Card>
@@ -70,11 +125,17 @@ export default function PaymentTypeForm({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form action={formAction} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-4">
           <input type="hidden" name="sheetId" value={sheetId} />
           <input type="hidden" name="icon" value={selectedIcon} />
           {mode === "edit" && initialData ? (
             <input type="hidden" name="paymentTypeId" value={initialData.id} />
+          ) : null}
+
+          {formError ? (
+            <p className="text-sm font-medium text-destructive">
+              {formError}
+            </p>
           ) : null}
 
           <div className="space-y-2">
@@ -85,7 +146,13 @@ export default function PaymentTypeForm({
               placeholder="e.g. Debit Card"
               defaultValue={initialData?.name ?? ""}
               required
+              aria-invalid={Boolean(getFieldError("name"))}
             />
+            {getFieldError("name") ? (
+              <p className="text-xs font-medium text-destructive">
+                {getFieldError("name")}
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
@@ -96,7 +163,11 @@ export default function PaymentTypeForm({
               icons={AVAILABLE_ICONS}
               maxRows={4}
             />
-            {!selectedIcon ? (
+            {getFieldError("icon") ? (
+              <p className="text-[10px] text-destructive font-medium">
+                {getFieldError("icon")}
+              </p>
+            ) : !selectedIcon ? (
               <p className="text-[10px] text-destructive font-medium">
                 Please select an icon for the payment type.
               </p>
@@ -104,7 +175,7 @@ export default function PaymentTypeForm({
           </div>
 
           <div className="pt-4 space-y-4">
-            <SubmitButton disabled={!selectedIcon} mode={mode} />
+            <SubmitButton disabled={!selectedIcon} loading={loading} mode={mode} />
             <Button variant="outline" className="w-full" asChild>
               <Link href={`/sheet/${sheetId}/settings/payment-types`}>
                 Cancel
@@ -129,16 +200,21 @@ export default function PaymentTypeForm({
                     this payment type will keep their transaction data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+                {deleteError ? (
+                  <p className="text-sm font-medium text-destructive">
+                    {deleteError}
+                  </p>
+                ) : null}
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <form action={deletePaymentType} className="mt-2 sm:mt-0">
+                  <form onSubmit={onDelete} className="mt-2 sm:mt-0">
                     <input type="hidden" name="sheetId" value={sheetId} />
                     <input
                       type="hidden"
                       name="paymentTypeId"
                       value={initialData.id}
                     />
-                    <DeleteButton />
+                    <DeleteButton loading={deleteLoading} />
                   </form>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -152,9 +228,11 @@ export default function PaymentTypeForm({
 
 function SubmitButton({
   disabled,
+  loading = false,
   mode,
 }: {
   disabled: boolean;
+  loading?: boolean;
   mode: "add" | "edit";
 }) {
   return (
@@ -164,11 +242,17 @@ function SubmitButton({
       disabled={disabled}
       text={mode === "edit" ? "Update Payment Type" : "Create Payment Type"}
       loadingText={mode === "edit" ? "Saving..." : "Creating..."}
+      loading={loading}
+      trackFormStatus={false}
     />
   );
 }
 
-function DeleteButton() {
+function DeleteButton({
+  loading = false,
+}: {
+  loading?: boolean;
+}) {
   return (
     <AlertDialogAction asChild variant="destructive">
       <LoadingButton
@@ -176,6 +260,8 @@ function DeleteButton() {
         variant="destructive"
         text="Delete"
         loadingText="Deleting..."
+        loading={loading}
+        trackFormStatus={false}
       />
     </AlertDialogAction>
   );

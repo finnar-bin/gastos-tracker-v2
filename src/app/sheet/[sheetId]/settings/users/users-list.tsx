@@ -1,19 +1,16 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Mail, Shield } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
+import { queryKeys } from "@/lib/query-keys";
+import { fetchSheetMemberDirectory } from "@/lib/sheet-member-directory";
 import { createClient } from "@/lib/supabase/client";
-import type { SheetMemberProfile } from "@/lib/sheet-member-profiles";
 import { RemoveUserButton } from "./remove-user-button";
 import { revokeSheetInvite } from "./actions";
-
-type SheetUserRow = {
-  user_id: string;
-  role: string;
-};
 
 type InviteRow = {
   id: string;
@@ -28,22 +25,33 @@ export function UsersList({
   sheetId,
   currentUserId,
   canManageInvites,
-  memberProfiles,
 }: {
   sheetId: string;
   currentUserId: string;
   canManageInvites: boolean;
-  memberProfiles: SheetMemberProfile[];
 }) {
-  const memberProfilesById = new Map(
-    memberProfiles.map((profile) => [profile.id, profile]),
-  );
+  const queryClient = useQueryClient();
+  const [revokingInviteId, setRevokingInviteId] = useState<string | null>(null);
+
+  async function handleRevokeInvite(
+    event: React.FormEvent<HTMLFormElement>,
+    inviteId: string,
+  ) {
+    event.preventDefault();
+    setRevokingInviteId(inviteId);
+
+    const formData = new FormData(event.currentTarget);
+    await revokeSheetInvite(formData);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.users(sheetId) });
+
+    setRevokingInviteId(null);
+  }
 
   const usersQuery = useQuery({
-    queryKey: ["sheet", sheetId, "users"],
+    queryKey: queryKeys.users(sheetId),
     queryFn: async () => {
-      const [membershipsResult, pendingInvitesResult] = await Promise.all([
-        supabase.from("sheet_users").select("user_id, role").eq("sheet_id", sheetId),
+      const [memberDirectory, pendingInvitesResult] = await Promise.all([
+        fetchSheetMemberDirectory(sheetId),
         supabase
           .from("sheet_invites")
           .select("id, invited_email, role, expires_at")
@@ -52,24 +60,10 @@ export function UsersList({
           .gt("expires_at", new Date().toISOString()),
       ]);
 
-      if (membershipsResult.error) throw membershipsResult.error;
       if (pendingInvitesResult.error) throw pendingInvitesResult.error;
 
-      const memberships = (membershipsResult.data ?? []) as SheetUserRow[];
-
-      const members = memberships.map((member) => {
-        const profile = memberProfilesById.get(member.user_id);
-        return {
-          id: member.user_id,
-          email: profile?.email ?? "",
-          displayName: profile?.displayName ?? null,
-          avatarUrl: profile?.avatarUrl ?? null,
-          role: member.role,
-        };
-      });
-
       return {
-        members,
+        members: memberDirectory,
         pendingInvites: (pendingInvitesResult.data ?? []) as InviteRow[],
       };
     },
@@ -122,10 +116,14 @@ export function UsersList({
                     </div>
                   </div>
                   {canManageInvites ? (
-                    <form action={revokeSheetInvite}>
+                    <form onSubmit={(event) => void handleRevokeInvite(event, invite.id)}>
                       <input type="hidden" name="inviteId" value={invite.id} />
                       <input type="hidden" name="sheetId" value={sheetId} />
-                      <Button size="sm" variant="outline">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={revokingInviteId === invite.id}
+                      >
                         Revoke
                       </Button>
                     </form>
@@ -174,7 +172,7 @@ export function UsersList({
                         <RemoveUserButton
                           sheetId={sheetId}
                           targetUserId={member.id}
-                          targetLabel={member.displayName || member.email}
+                          targetLabel={member.displayName || member.email || "User"}
                         />
                       </div>
                     ) : null}
