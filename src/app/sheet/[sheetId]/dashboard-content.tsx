@@ -14,151 +14,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormattedAmount } from "@/components/formatted-amount";
 import { UserAvatar } from "@/components/user-avatar";
-import {
-  getMonthDateRange,
-  getMonthIndexFromDateString,
-} from "@/lib/date-only";
+import { fetchDashboardSummary } from "@/lib/dashboard-summary";
 import { getLucideIcon } from "@/lib/lucide-icons";
-import { createClient } from "@/lib/supabase/client";
-import type { SheetMemberProfile } from "@/lib/sheet-member-profiles";
+import { queryKeys } from "@/lib/query-keys";
+import { fetchSheetCurrency } from "@/lib/sheet-currency";
 
-type TransactionRow = {
-  id: string;
-  amount: string;
-  type: "income" | "expense";
-  description: string | null;
-  date: string;
-  created_at: string;
-  category_id: string;
-  created_by: string;
-};
-
-type CategoryRow = {
-  id: string;
-  name: string;
-  icon: string;
-};
-
-const supabase = createClient();
-
-export function DashboardContent({
-  sheetId,
-  currency,
-  memberProfiles,
-}: {
-  sheetId: string;
-  currency: string;
-  memberProfiles: SheetMemberProfile[];
-}) {
-  const profilesById = new Map(memberProfiles.map((profile) => [profile.id, profile]));
+export function DashboardContent({ sheetId }: { sheetId: string }) {
+  const now = new Date();
+  const currencyQuery = useQuery({
+    queryKey: queryKeys.sheetCurrency(sheetId),
+    queryFn: () => fetchSheetCurrency(sheetId),
+  });
   const dashboardQuery = useQuery({
-    queryKey: ["sheet", sheetId, "dashboard"],
-    queryFn: async () => {
-      const now = new Date();
-      const { startDate: monthStart, endDate: monthEnd } = getMonthDateRange(
-        now.getFullYear(),
-        now.getMonth(),
-      );
-      const yearStart = `${now.getFullYear()}-01-01`;
-      const yearEnd = `${now.getFullYear()}-12-31`;
-
-      const [monthlyResult, yearlyResult, recentResult] = await Promise.all([
-        supabase
-          .from("transactions")
-          .select("amount, type")
-          .eq("sheet_id", sheetId)
-          .gte("date", monthStart)
-          .lte("date", monthEnd),
-        supabase
-          .from("transactions")
-          .select("amount, type, date")
-          .eq("sheet_id", sheetId)
-          .gte("date", yearStart)
-          .lte("date", yearEnd),
-        supabase
-          .from("transactions")
-          .select("id, amount, type, description, date, created_at, category_id, created_by")
-          .eq("sheet_id", sheetId)
-          .order("created_at", { ascending: false })
-          .limit(5),
-      ]);
-
-      if (monthlyResult.error) throw monthlyResult.error;
-      if (yearlyResult.error) throw yearlyResult.error;
-      if (recentResult.error) throw recentResult.error;
-
-      const monthlyRows = monthlyResult.data ?? [];
-      const yearlyRows = yearlyResult.data ?? [];
-      const recentTransactions = (recentResult.data ?? []) as TransactionRow[];
-
-      const incomeTotal = monthlyRows
-        .filter((row) => row.type === "income")
-        .reduce((sum, row) => sum + Number(row.amount ?? 0), 0);
-      const expenseTotal = monthlyRows
-        .filter((row) => row.type === "expense")
-        .reduce((sum, row) => sum + Number(row.amount ?? 0), 0);
-
-      const chartData = Array.from({ length: 12 }, (_, i) => ({
-        month: i,
-        income: 0,
-        expense: 0,
-      }));
-
-      for (const row of yearlyRows) {
-        const monthIndex = getMonthIndexFromDateString(row.date);
-        if (monthIndex === null) {
-          continue;
-        }
-        const value = Number(row.amount ?? 0);
-        if (row.type === "income") {
-          chartData[monthIndex].income += value;
-        } else {
-          chartData[monthIndex].expense += value;
-        }
-      }
-
-      const categoryIds = [...new Set(recentTransactions.map((tx) => tx.category_id))];
-      const [categoriesResult] = await Promise.all([
-        categoryIds.length > 0
-          ? supabase.from("categories").select("id, name, icon").in("id", categoryIds)
-          : Promise.resolve({ data: [], error: null }),
-      ]);
-
-      if (categoriesResult.error) throw categoriesResult.error;
-
-      const categoriesById = new Map(
-        ((categoriesResult.data ?? []) as CategoryRow[]).map((category) => [
-          category.id,
-          category,
-        ]),
-      );
-
-      return {
-        now,
-        incomeTotal: String(incomeTotal),
-        expenseTotal: String(expenseTotal),
-        chartData,
-        recentTransactions: recentTransactions.map((tx) => {
-          const category = categoriesById.get(tx.category_id);
-          const profile = profilesById.get(tx.created_by);
-          return {
-            id: tx.id,
-            amount: tx.amount,
-            type: tx.type,
-            description: tx.description,
-            date: tx.date,
-            categoryName: category?.name ?? "Category",
-            categoryIcon: category?.icon ?? "LayoutGrid",
-            creatorDisplayName: profile?.displayName ?? null,
-            creatorEmail: profile?.email ?? null,
-            creatorAvatarUrl: profile?.avatarUrl ?? null,
-          };
-        }),
-      };
-    },
+    queryKey: queryKeys.dashboard(sheetId),
+    queryFn: () =>
+      fetchDashboardSummary({
+        sheetId,
+        year: now.getFullYear(),
+        month: now.getMonth(),
+      }),
   });
 
-  if (dashboardQuery.isLoading) {
+  if (dashboardQuery.isLoading || currencyQuery.isLoading) {
     return (
       <div className="space-y-6">
         <div className="h-32 rounded-xl bg-muted/40 animate-pulse" />
@@ -168,14 +45,17 @@ export function DashboardContent({
     );
   }
 
-  if (dashboardQuery.error || !dashboardQuery.data) {
+  if (dashboardQuery.error || currencyQuery.error || !dashboardQuery.data) {
     return (
       <div className="rounded-xl border border-dashed p-6 text-center">
         <p className="text-sm text-muted-foreground">Failed to load dashboard.</p>
         <Button
           variant="outline"
           className="mt-4"
-          onClick={() => void dashboardQuery.refetch()}
+          onClick={() => {
+            void dashboardQuery.refetch();
+            void currencyQuery.refetch();
+          }}
         >
           Retry
         </Button>
@@ -183,8 +63,8 @@ export function DashboardContent({
     );
   }
 
-  const { now, incomeTotal, expenseTotal, chartData, recentTransactions } =
-    dashboardQuery.data;
+  const { incomeTotal, expenseTotal, chartData, recentTransactions } = dashboardQuery.data;
+  const currency = currencyQuery.data ?? "USD";
   const chartMax = Math.max(
     1,
     ...chartData.flatMap((point) => [point.income, point.expense]),

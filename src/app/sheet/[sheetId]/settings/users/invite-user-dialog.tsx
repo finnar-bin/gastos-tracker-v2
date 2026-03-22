@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { queryKeys } from "@/lib/query-keys";
 import { createSheetInvite } from "./actions";
 
 type InviteUserDialogProps = {
@@ -30,7 +31,7 @@ type InviteUserDialogProps = {
 };
 
 export function InviteUserDialog({ sheetId }: InviteUserDialogProps) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("viewer");
@@ -68,7 +69,7 @@ export function InviteUserDialog({ sheetId }: InviteUserDialogProps) {
     setEmail("");
     setRole("viewer");
     setOpen(false);
-    router.refresh();
+    await queryClient.invalidateQueries({ queryKey: queryKeys.users(sheetId) });
   }
 
   return (

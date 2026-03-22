@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,9 +43,12 @@ export function GeneralSettingsForm({
   canEditSheetSettings: boolean;
   canDeleteSheet: boolean;
 }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [currency, setCurrency] = useState(currentCurrency);
   const [pushEnabled, setPushEnabled] = useState(pushNotificationsEnabled);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const currencyOptions = CURRENCIES.map((item) => ({
     value: item.code,
@@ -83,6 +87,28 @@ export function GeneralSettingsForm({
     toast.success(
       `Test notification sent${json?.sent ? ` (${json.sent})` : ""}.`,
     );
+  }
+
+  async function onDelete(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setDeleteLoading(true);
+    setDeleteError(null);
+
+    try {
+      const result = await deleteSheet(new FormData(event.currentTarget));
+
+      if (result.redirectTo) {
+        router.push(result.redirectTo);
+        return;
+      }
+
+      setDeleteError(result.error ?? "Failed to delete sheet.");
+    } catch (error) {
+      console.error("Sheet delete failed:", error);
+      setDeleteError("Something went wrong while deleting the sheet.");
+    } finally {
+      setDeleteLoading(false);
+    }
   }
 
   return (
@@ -200,11 +226,16 @@ export function GeneralSettingsForm({
                     this sheet and all associated data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+                {deleteError ? (
+                  <p className="text-sm font-medium text-destructive">
+                    {deleteError}
+                  </p>
+                ) : null}
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <form action={deleteSheet} className="mt-2 sm:mt-0">
+                  <form onSubmit={onDelete} className="mt-2 sm:mt-0">
                     <input type="hidden" name="sheetId" value={sheetId} />
-                    <DeleteButton />
+                    <DeleteButton loading={deleteLoading} />
                   </form>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -216,7 +247,11 @@ export function GeneralSettingsForm({
   );
 }
 
-function DeleteButton() {
+function DeleteButton({
+  loading = false,
+}: {
+  loading?: boolean;
+}) {
   return (
     <AlertDialogAction asChild variant="destructive">
       <LoadingButton
@@ -224,6 +259,8 @@ function DeleteButton() {
         variant="destructive"
         text="Confirm Delete"
         loadingText="Deleting..."
+        loading={loading}
+        trackFormStatus={false}
       />
     </AlertDialogAction>
   );

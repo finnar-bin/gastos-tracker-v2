@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { queryKeys } from "@/lib/query-keys";
 import { createClient } from "@/lib/supabase/client";
 import TransactionForm, { type TransactionData } from "./add/form";
 
@@ -45,14 +46,12 @@ export function TransactionFormLoader({
   transactionType?: "income" | "expense";
 }) {
   const transactionFormQuery = useQuery({
-    queryKey: [
-      "sheet",
+    queryKey: queryKeys.transactionForm(
       sheetId,
-      "transaction-form",
       mode,
       transactionId ?? "new",
       transactionType ?? "unknown",
-    ],
+    ),
     queryFn: async () => {
       const [categoriesResult, paymentTypesResult, transactionResult] =
         await Promise.all([

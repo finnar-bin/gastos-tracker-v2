@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { addTransaction } from "./actions";
 import {
   updateTransaction,
@@ -17,6 +18,7 @@ import Link from "next/link";
 import { ReceiptText } from "lucide-react";
 import { CategoryPicker } from "@/components/category-picker";
 import { PaymentTypePicker } from "@/components/payment-type-picker";
+import { MAX_DECIMAL_AMOUNT } from "@/lib/validation/amount";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import type { FormErrors } from "@/lib/form-state";
 
 interface Category {
   id: string;
@@ -69,11 +72,17 @@ export default function TransactionForm({
   initialData?: TransactionData;
   cancelHref: string;
 }) {
+  const router = useRouter();
   const type = initialData?.type ?? transactionType ?? "expense";
   const isExpense = type === "expense";
   const titlePrefix = mode === "edit" ? "Edit" : "Add";
   const formAction = mode === "edit" ? updateTransaction : addTransaction;
   const [amount, setAmount] = useState(initialData?.amount ?? "");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
+  const [loading, setLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handleCategoryChange = (categoryId: string) => {
     if (mode !== "add") return;
@@ -82,6 +91,54 @@ export default function TransactionForm({
       setAmount(category.defaultAmount);
     }
   };
+
+  const getFieldError = (field: string) => fieldErrors[field];
+
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setFormError(null);
+    setFieldErrors({});
+
+    try {
+      const result = await formAction(new FormData(event.currentTarget));
+
+      if (result.redirectTo) {
+        router.push(result.redirectTo);
+        return;
+      }
+
+      setFormError(result.error ?? "Please review the form and try again.");
+      setFieldErrors(result.fieldErrors ?? {});
+    } catch (error) {
+      console.error("Transaction form submission failed:", error);
+      setFormError("Something went wrong while saving the transaction.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onDelete(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setDeleteLoading(true);
+    setDeleteError(null);
+
+    try {
+      const result = await deleteTransaction(new FormData(event.currentTarget));
+
+      if (result.redirectTo) {
+        router.push(result.redirectTo);
+        return;
+      }
+
+      setDeleteError(result.error ?? "Failed to delete transaction.");
+    } catch (error) {
+      console.error("Transaction delete failed:", error);
+      setDeleteError("Something went wrong while deleting the transaction.");
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
 
   return (
     <Card className="w-full">
@@ -110,7 +167,7 @@ export default function TransactionForm({
             </div>
           </div>
         ) : (
-          <form action={formAction} className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4">
             <input type="hidden" name="type" value={type} />
             <input type="hidden" name="sheetId" value={sheetId} />
             {mode === "edit" && initialData && (
@@ -121,6 +178,12 @@ export default function TransactionForm({
               />
             )}
 
+            {formError ? (
+              <p className="text-sm font-medium text-destructive">
+                {formError}
+              </p>
+            ) : null}
+
             <div className="space-y-2">
               <Label htmlFor="categoryId">Category</Label>
               <CategoryPicker
@@ -130,7 +193,17 @@ export default function TransactionForm({
                 onValueChangeAction={handleCategoryChange}
                 placeholder="Select category"
                 required
+                triggerClassName={
+                  getFieldError("categoryId")
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : undefined
+                }
               />
+              {getFieldError("categoryId") ? (
+                <p className="text-xs font-medium text-destructive">
+                  {getFieldError("categoryId")}
+                </p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -140,12 +213,20 @@ export default function TransactionForm({
                 name="amount"
                 type="number"
                 step="0.01"
+                min="0.01"
+                max={MAX_DECIMAL_AMOUNT}
                 placeholder="0.00"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
                 required
                 autoFocus
+                aria-invalid={Boolean(getFieldError("amount"))}
               />
+              {getFieldError("amount") ? (
+                <p className="text-xs font-medium text-destructive">
+                  {getFieldError("amount")}
+                </p>
+              ) : null}
             </div>
 
             {isExpense && (
@@ -156,7 +237,17 @@ export default function TransactionForm({
                   name="paymentType"
                   defaultValue={initialData?.paymentType ?? undefined}
                   required
+                  triggerClassName={
+                    getFieldError("paymentType")
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : undefined
+                  }
                 />
+                {getFieldError("paymentType") ? (
+                  <p className="text-xs font-medium text-destructive">
+                    {getFieldError("paymentType")}
+                  </p>
+                ) : null}
               </div>
             )}
 
@@ -169,7 +260,13 @@ export default function TransactionForm({
                   initialData?.date ?? new Date().toISOString().split("T")[0]
                 }
                 required
+                aria-invalid={Boolean(getFieldError("date"))}
               />
+              {getFieldError("date") ? (
+                <p className="text-xs font-medium text-destructive">
+                  {getFieldError("date")}
+                </p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -188,6 +285,8 @@ export default function TransactionForm({
                 className="w-full"
                 text={mode === "edit" ? "Save Changes" : "Save"}
                 loadingText={mode === "edit" ? "Saving..." : "Saving..."}
+                loading={loading}
+                trackFormStatus={false}
               />
               <Button variant="outline" className="w-full" asChild>
                 <Link href={cancelHref}>Cancel</Link>
@@ -211,9 +310,14 @@ export default function TransactionForm({
                     This will permanently delete this transaction.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+                {deleteError ? (
+                  <p className="text-sm font-medium text-destructive">
+                    {deleteError}
+                  </p>
+                ) : null}
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <form action={deleteTransaction} className="mt-2 sm:mt-0">
+                  <form onSubmit={onDelete} className="mt-2 sm:mt-0">
                     <input type="hidden" name="sheetId" value={sheetId} />
                     <input
                       type="hidden"
@@ -226,6 +330,8 @@ export default function TransactionForm({
                         variant="destructive"
                         text="Confirm Delete"
                         loadingText="Deleting..."
+                        loading={deleteLoading}
+                        trackFormStatus={false}
                       />
                     </AlertDialogAction>
                   </form>

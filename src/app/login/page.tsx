@@ -2,9 +2,10 @@
 
 import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { login, loginWithGoogle } from "./actions";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
@@ -15,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { FormErrors } from "@/lib/form-state";
 
 export default function LoginPage() {
   return (
@@ -40,9 +42,43 @@ function LoginPageFallback() {
 }
 
 function LoginPageContent() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
+  const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/sheet";
+
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setFormError(null);
+    setFieldErrors({});
+
+    try {
+      const result = await login(new FormData(event.currentTarget));
+
+      if (result.defaultValues?.email !== undefined) {
+        setEmail(result.defaultValues.email);
+      }
+
+      if (result.redirectTo) {
+        router.push(result.redirectTo);
+        return;
+      }
+
+      setFormError(result.error ?? "Unable to log in.");
+      setFieldErrors(result.fieldErrors ?? {});
+    } catch (error) {
+      console.error("Login failed:", error);
+      setFormError("Something went wrong while logging in.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 section-padding">
@@ -54,8 +90,13 @@ function LoginPageContent() {
           <CardDescription>Track your finances with ease</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4">
             <input type="hidden" name="next" value={next} />
+            {formError ? (
+              <p className="text-sm font-medium text-destructive">
+                {formError}
+              </p>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -63,8 +104,16 @@ function LoginPageContent() {
                 name="email"
                 type="email"
                 placeholder="m@example.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
                 required
+                aria-invalid={Boolean(fieldErrors.email)}
               />
+              {fieldErrors.email ? (
+                <p className="text-xs font-medium text-destructive">
+                  {fieldErrors.email}
+                </p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -74,7 +123,10 @@ function LoginPageContent() {
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
                   required
+                  aria-invalid={Boolean(fieldErrors.password)}
                 />
                 <button
                   type="button"
@@ -89,11 +141,21 @@ function LoginPageContent() {
                   )}
                 </button>
               </div>
+              {fieldErrors.password ? (
+                <p className="text-xs font-medium text-destructive">
+                  {fieldErrors.password}
+                </p>
+              ) : null}
             </div>
             <div className="flex flex-col gap-3 pt-2">
-              <Button formAction={login} className="w-full cursor-pointer">
-                Log in
-              </Button>
+              <LoadingButton
+                type="submit"
+                className="w-full cursor-pointer"
+                text="Log in"
+                loadingText="Logging in..."
+                loading={loading}
+                trackFormStatus={false}
+              />
               <Button asChild variant="outline" className="w-full">
                 <Link href={`/signup?next=${encodeURIComponent(next)}`}>
                   Sign up

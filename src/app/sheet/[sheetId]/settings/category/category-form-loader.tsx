@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { queryKeys } from "@/lib/query-keys";
 import { createClient } from "@/lib/supabase/client";
 import CategoryForm, { type CategoryFormData } from "./add/form";
 
@@ -28,7 +29,7 @@ export function CategoryFormLoader({
   returnType: "income" | "expense";
 }) {
   const categoryQuery = useQuery({
-    queryKey: ["sheet", sheetId, "category-form", categoryId],
+    queryKey: queryKeys.categoryForm(sheetId, categoryId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")

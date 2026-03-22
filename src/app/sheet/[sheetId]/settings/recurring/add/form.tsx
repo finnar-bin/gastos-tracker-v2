@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { addRecurringTransaction } from "../add/actions";
 import {
   updateRecurringTransaction,
@@ -22,6 +23,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { Repeat } from "lucide-react";
+import { MAX_DECIMAL_AMOUNT } from "@/lib/validation/amount";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +35,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import type { FormErrors } from "@/lib/form-state";
 
 interface Category {
   id: string;
@@ -72,6 +75,7 @@ export default function RecurringTransactionForm({
   mode?: "add" | "edit";
   initialData?: RecurringTransactionData;
 }) {
+  const router = useRouter();
   const initialType = initialData?.type ?? "expense";
   const initialTypeCategories = categories.filter(
     (category) => category.type === initialType,
@@ -91,12 +95,18 @@ export default function RecurringTransactionForm({
   const [dayOfMonth, setDayOfMonth] = useState<string>(
     initialData?.dayOfMonth ?? "",
   );
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
+  const [loading, setLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const isInvalidDay =
     frequency === "monthly" && dayOfMonth !== "" && parseInt(dayOfMonth) > 31;
 
   const formAction =
     mode === "edit" ? updateRecurringTransaction : addRecurringTransaction;
+  const getFieldError = (field: string) => fieldErrors[field];
 
   const filteredCategories = categories.filter(
     (category) => category.type === transactionType,
@@ -140,6 +150,58 @@ export default function RecurringTransactionForm({
     }
   };
 
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setFormError(null);
+    setFieldErrors({});
+
+    try {
+      const result = await formAction(new FormData(event.currentTarget));
+
+      if (result.redirectTo) {
+        router.push(result.redirectTo);
+        return;
+      }
+
+      setFormError(result.error ?? "Please review the form and try again.");
+      setFieldErrors(result.fieldErrors ?? {});
+    } catch (error) {
+      console.error("Recurring transaction form submission failed:", error);
+      setFormError(
+        "Something went wrong while saving the recurring transaction.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onDelete(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setDeleteLoading(true);
+    setDeleteError(null);
+
+    try {
+      const result = await deleteRecurringTransaction(
+        new FormData(event.currentTarget),
+      );
+
+      if (result.redirectTo) {
+        router.push(result.redirectTo);
+        return;
+      }
+
+      setDeleteError(result.error ?? "Failed to delete recurring schedule.");
+    } catch (error) {
+      console.error("Recurring schedule delete failed:", error);
+      setDeleteError(
+        "Something went wrong while deleting the recurring schedule.",
+      );
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -166,11 +228,17 @@ export default function RecurringTransactionForm({
             </Button>
           </div>
         ) : (
-          <form action={formAction} className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4">
             <input type="hidden" name="sheetId" value={sheetId} />
             {mode === "edit" && initialData && (
               <input type="hidden" name="recurringId" value={initialData.id} />
             )}
+
+            {formError ? (
+              <p className="text-sm font-medium text-destructive">
+                {formError}
+              </p>
+            ) : null}
 
             <div className="space-y-2">
               <Label htmlFor="type">Type</Label>
@@ -180,13 +248,18 @@ export default function RecurringTransactionForm({
                 onValueChange={handleTypeChange}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="income">Income</SelectItem>
                   <SelectItem value="expense">Expense</SelectItem>
                 </SelectContent>
               </Select>
+              {getFieldError("type") ? (
+                <p className="text-xs font-medium text-destructive">
+                  {getFieldError("type")}
+                </p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -198,7 +271,17 @@ export default function RecurringTransactionForm({
                 onValueChangeAction={handleCategoryChange}
                 placeholder="Select category"
                 required
+                triggerClassName={
+                  getFieldError("categoryId")
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : undefined
+                }
               />
+              {getFieldError("categoryId") ? (
+                <p className="text-xs font-medium text-destructive">
+                  {getFieldError("categoryId")}
+                </p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -208,11 +291,19 @@ export default function RecurringTransactionForm({
                 name="amount"
                 type="number"
                 step="0.01"
+                min="0.01"
+                max={MAX_DECIMAL_AMOUNT}
                 placeholder="0.00"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
                 required
+                aria-invalid={Boolean(getFieldError("amount"))}
               />
+              {getFieldError("amount") ? (
+                <p className="text-xs font-medium text-destructive">
+                  {getFieldError("amount")}
+                </p>
+              ) : null}
             </div>
 
             {transactionType === "expense" && (
@@ -223,7 +314,17 @@ export default function RecurringTransactionForm({
                   name="paymentType"
                   defaultValue={initialData?.paymentType}
                   required
+                  triggerClassName={
+                    getFieldError("paymentType")
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : undefined
+                  }
                 />
+                {getFieldError("paymentType") ? (
+                  <p className="text-xs font-medium text-destructive">
+                    {getFieldError("paymentType")}
+                  </p>
+                ) : null}
               </div>
             )}
 
@@ -244,6 +345,11 @@ export default function RecurringTransactionForm({
                   <SelectItem value="yearly">Yearly</SelectItem>
                 </SelectContent>
               </Select>
+              {getFieldError("frequency") ? (
+                <p className="text-xs font-medium text-destructive">
+                  {getFieldError("frequency")}
+                </p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -264,16 +370,20 @@ export default function RecurringTransactionForm({
                 value={dayOfMonth}
                 onChange={(e) => setDayOfMonth(e.target.value)}
                 className={
-                  isInvalidDay
+                  isInvalidDay || Boolean(getFieldError("dayOfMonth"))
                     ? "border-destructive text-destructive focus-visible:ring-destructive"
                     : ""
                 }
               />
-              {isInvalidDay && (
+              {getFieldError("dayOfMonth") ? (
+                <p className="text-[10px] text-destructive font-medium">
+                  {getFieldError("dayOfMonth")}
+                </p>
+              ) : isInvalidDay ? (
                 <p className="text-[10px] text-destructive font-medium">
                   Day of month cannot exceed 31.
                 </p>
-              )}
+              ) : null}
               <p className="text-[10px] text-muted-foreground">
                 {frequency === "monthly"
                   ? "Select which day of the month this should trigger."
@@ -292,7 +402,7 @@ export default function RecurringTransactionForm({
             </div>
 
             <div className="pt-4 space-y-4">
-              <SubmitButton disabled={isInvalidDay} mode={mode} />
+              <SubmitButton disabled={isInvalidDay} loading={loading} mode={mode} />
               <Button variant="outline" className="w-full" asChild>
                 <Link href={`/sheet/${sheetId}/settings/recurring`}>
                   Cancel
@@ -318,19 +428,21 @@ export default function RecurringTransactionForm({
                     transactions will not be affected.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+                {deleteError ? (
+                  <p className="text-sm font-medium text-destructive">
+                    {deleteError}
+                  </p>
+                ) : null}
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <form
-                    action={deleteRecurringTransaction}
-                    className="mt-2 sm:mt-0"
-                  >
+                  <form onSubmit={onDelete} className="mt-2 sm:mt-0">
                     <input type="hidden" name="sheetId" value={sheetId} />
                     <input
                       type="hidden"
                       name="recurringId"
                       value={initialData.id}
                     />
-                    <DeleteButton />
+                    <DeleteButton loading={deleteLoading} />
                   </form>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -344,9 +456,11 @@ export default function RecurringTransactionForm({
 
 function SubmitButton({
   disabled,
+  loading = false,
   mode,
 }: {
   disabled: boolean;
+  loading?: boolean;
   mode: "add" | "edit";
 }) {
   return (
@@ -356,11 +470,17 @@ function SubmitButton({
       disabled={disabled}
       text={mode === "edit" ? "Save Changes" : "Create Schedule"}
       loadingText={mode === "edit" ? "Saving..." : "Creating..."}
+      loading={loading}
+      trackFormStatus={false}
     />
   );
 }
 
-function DeleteButton() {
+function DeleteButton({
+  loading = false,
+}: {
+  loading?: boolean;
+}) {
   return (
     <AlertDialogAction asChild variant="destructive">
       <LoadingButton
@@ -368,6 +488,8 @@ function DeleteButton() {
         variant="destructive"
         text="Confirm Delete"
         loadingText="Deleting..."
+        loading={loading}
+        trackFormStatus={false}
       />
     </AlertDialogAction>
   );

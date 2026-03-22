@@ -6,8 +6,6 @@ import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
 import { Header } from "@/components/Header";
 import { getLucideIcon } from "@/lib/lucide-icons";
-import { getSheetCurrency } from "@/lib/sheet-settings";
-import { getSheetMemberProfiles } from "@/lib/sheet-member-profiles";
 import { CategoryTransactionsContent } from "./category-transactions-content";
 
 export default async function CategoryTransactionsPage({
@@ -16,11 +14,7 @@ export default async function CategoryTransactionsPage({
   params: Promise<{ sheetId: string; transactionId: string }>;
 }) {
   const { sheetId, transactionId } = await params;
-  const [{ permissions, sheet }, sheetCurrency, memberProfiles] = await Promise.all([
-    requireSheetAccess(sheetId),
-    getSheetCurrency(sheetId),
-    getSheetMemberProfiles(sheetId),
-  ]);
+  const { permissions, sheet } = await requireSheetAccess(sheetId);
 
   const categoryPromise = db
     .select({
@@ -56,9 +50,7 @@ export default async function CategoryTransactionsPage({
         categoryName={category.name}
         categoryIcon={category.icon}
         categoryType={category.type}
-        currency={sheetCurrency}
         canEditTransaction={permissions.canEditTransaction}
-        memberProfiles={memberProfiles}
       />
     </div>
   );

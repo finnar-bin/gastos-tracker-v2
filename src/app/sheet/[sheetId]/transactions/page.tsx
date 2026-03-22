@@ -1,7 +1,6 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
 import { LayoutList } from "lucide-react";
 import { Header } from "@/components/Header";
-import { getSheetCurrency } from "@/lib/sheet-settings";
 import { TransactionsContent } from "./transactions-content";
 
 export default async function YearOverviewPage({
@@ -10,10 +9,7 @@ export default async function YearOverviewPage({
   params: Promise<{ sheetId: string }>;
 }) {
   const { sheetId } = await params;
-  const [{ sheet }, sheetCurrency] = await Promise.all([
-    requireSheetAccess(sheetId),
-    getSheetCurrency(sheetId),
-  ]);
+  const { sheet } = await requireSheetAccess(sheetId);
 
   return (
     <div className="container max-w-md mx-auto p-4 space-y-6">
@@ -25,7 +21,7 @@ export default async function YearOverviewPage({
         subtitle={sheet.name}
       />
 
-      <TransactionsContent sheetId={sheetId} currency={sheetCurrency} />
+      <TransactionsContent sheetId={sheetId} />
     </div>
   );
 }

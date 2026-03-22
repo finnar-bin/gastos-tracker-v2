@@ -1,9 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-
 import { createClient } from "@/lib/supabase/server";
+import type { FormActionResult } from "@/lib/form-state";
 
 function getSafeNextPath(next: string | null) {
   if (!next) return "/sheet";
@@ -12,12 +11,20 @@ function getSafeNextPath(next: string | null) {
   return next;
 }
 
-export async function signup(_previousState: unknown, formData: FormData) {
+type SignupFormResult = FormActionResult & {
+  defaultValues?: {
+    email: string;
+    displayName: string;
+    password: string;
+  };
+};
+
+export async function signup(formData: FormData): Promise<SignupFormResult> {
   const supabase = await createClient();
 
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-  const displayName = formData.get("displayName") as string;
+  const email = (formData.get("email") as string)?.trim() ?? "";
+  const password = (formData.get("password") as string) ?? "";
+  const displayName = (formData.get("displayName") as string)?.trim() ?? "";
   const next = getSafeNextPath((formData.get("next") as string) || null);
 
   const defaultValues = {
@@ -26,22 +33,27 @@ export async function signup(_previousState: unknown, formData: FormData) {
     password,
   };
 
-  // Server-side validation
-  if (!email || !password || !displayName) {
-    return { error: "All fields are required", defaultValues };
-  }
+  const fieldErrors: FormActionResult["fieldErrors"] = {};
+
+  if (!displayName) fieldErrors.displayName = "Display name is required.";
+  if (!email) fieldErrors.email = "Email is required.";
+  if (!password) fieldErrors.password = "Password is required.";
 
   if (password.length < 6) {
-    return {
-      error: "Password must be at least 6 characters",
-      defaultValues,
-    };
+    fieldErrors.password = "Password must be at least 6 characters.";
   }
 
-  // Basic email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return { error: "Invalid email format", defaultValues };
+  if (email && !emailRegex.test(email)) {
+    fieldErrors.email = "Enter a valid email address.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return {
+      error: "Please fix the highlighted fields.",
+      fieldErrors,
+      defaultValues,
+    };
   }
 
   const { error } = await supabase.auth.signUp({
@@ -61,5 +73,5 @@ export async function signup(_previousState: unknown, formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect(next);
+  return { redirectTo: next };
 }

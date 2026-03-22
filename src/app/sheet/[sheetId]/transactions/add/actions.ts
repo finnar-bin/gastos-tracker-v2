@@ -1,22 +1,22 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { transactions } from "@/lib/db/schema";
 import { requireSheetPermission } from "@/lib/auth/sheets";
+import type { FormActionResult } from "@/lib/form-state";
+import { parseAndValidateAmount } from "@/lib/validation/amount";
 
-export async function addTransaction(formData: FormData) {
+export async function addTransaction(formData: FormData): Promise<FormActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    return { redirectTo: "/login" };
   }
 
-  const amount = parseFloat(formData.get("amount") as string);
   const type = formData.get("type") as "income" | "expense";
   const categoryId = formData.get("categoryId") as string;
   const sheetId = formData.get("sheetId") as string;
@@ -29,22 +29,47 @@ export async function addTransaction(formData: FormData) {
   const dateStr = formData.get("date") as string;
   const date = dateStr || new Date().toISOString().split("T")[0];
 
-  await requireSheetPermission(sheetId, "canAddTransaction");
+  const fieldErrors: FormActionResult["fieldErrors"] = {};
 
+  if (!sheetId) fieldErrors.sheetId = "Invalid sheet.";
+  if (!categoryId) fieldErrors.categoryId = "Category is required.";
+  if (type !== "income" && type !== "expense") {
+    fieldErrors.type = "Transaction type is required.";
+  }
+  if (!date) fieldErrors.date = "Transaction date is required.";
   if (type === "expense" && !paymentType) {
-    throw new Error("Payment type is required for expense transactions");
+    fieldErrors.paymentType = "Payment type is required for expense transactions.";
   }
 
-  await db.insert(transactions).values({
-    createdBy: user.id,
-    sheetId,
-    categoryId,
-    paymentType,
-    amount: amount.toString(), // Store as string for decimal
-    type,
-    description,
-    date,
-  });
+  let amount: number;
+  try {
+    amount = parseAndValidateAmount(formData.get("amount"));
+  } catch (error) {
+    fieldErrors.amount =
+      error instanceof Error ? error.message : "Amount is invalid.";
+    amount = 0;
+  }
 
-  redirect(`/sheet/${sheetId}`);
+  if (fieldErrors && Object.keys(fieldErrors).length > 0) {
+    return { error: "Please fix the highlighted fields.", fieldErrors };
+  }
+
+  await requireSheetPermission(sheetId, "canAddTransaction");
+  try {
+    await db.insert(transactions).values({
+      createdBy: user.id,
+      sheetId,
+      categoryId,
+      paymentType,
+      amount: amount.toString(),
+      type,
+      description,
+      date,
+    });
+  } catch (error) {
+    console.error("Error adding transaction:", error);
+    return { error: "Failed to save transaction. Please review the form and try again." };
+  }
+
+  return { redirectTo: `/sheet/${sheetId}` };
 }
