@@ -90,17 +90,6 @@ export function HistoryContent({
     ? availableCategories.filter((category) => category.type === selectedType)
     : availableCategories;
 
-  const returnParams = new URLSearchParams({
-    month: selectedMonth.toString(),
-    year: selectedYear.toString(),
-  });
-  if (selectedType) {
-    returnParams.set("type", selectedType);
-  }
-  if (selectedCategoryId) {
-    returnParams.set("categoryId", selectedCategoryId);
-  }
-  const returnTo = `/sheet/${sheetId}/history?${returnParams.toString()}`;
   const currency = currencyQuery.data ?? "USD";
   const isRefreshing =
     Boolean(historyQuery.data) &&
