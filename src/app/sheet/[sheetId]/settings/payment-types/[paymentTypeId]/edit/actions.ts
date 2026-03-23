@@ -23,6 +23,7 @@ export async function updatePaymentType(
   const sheetId = formData.get("sheetId") as string;
   const name = (formData.get("name") as string)?.trim();
   const icon = (formData.get("icon") as string)?.trim();
+  const inPlace = formData.get("inPlace") === "1";
 
   const fieldErrors: FormActionResult["fieldErrors"] = {};
   if (!paymentTypeId) fieldErrors.paymentTypeId = "Invalid payment type.";
@@ -50,6 +51,10 @@ export async function updatePaymentType(
     return { error: "Failed to save payment type. Please review the form and try again." };
   }
 
+  if (inPlace) {
+    return { success: "Payment type updated." };
+  }
+
   return { redirectTo: `/sheet/${sheetId}/settings/payment-types` };
 }
 
@@ -67,6 +72,7 @@ export async function deletePaymentType(
 
   const paymentTypeId = formData.get("paymentTypeId") as string;
   const sheetId = formData.get("sheetId") as string;
+  const inPlace = formData.get("inPlace") === "1";
   const fieldErrors: FormActionResult["fieldErrors"] = {};
 
   if (!paymentTypeId) fieldErrors.paymentTypeId = "Invalid payment type.";
@@ -94,6 +100,10 @@ export async function deletePaymentType(
   } catch (error) {
     console.error("Error deleting payment type:", error);
     return { error: "Failed to delete payment type. Please try again." };
+  }
+
+  if (inPlace) {
+    return { success: "Payment type deleted." };
   }
 
   return { redirectTo: `/sheet/${sheetId}/settings/payment-types` };

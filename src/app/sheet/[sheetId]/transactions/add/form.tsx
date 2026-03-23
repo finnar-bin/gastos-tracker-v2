@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { addTransaction } from "./actions";
 import {
@@ -13,9 +14,7 @@ import { LoadingButton } from "@/components/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { ReceiptText } from "lucide-react";
 import { CategoryPicker } from "@/components/category-picker";
 import { PaymentTypePicker } from "@/components/payment-type-picker";
 import { MAX_DECIMAL_AMOUNT } from "@/lib/validation/amount";
@@ -31,11 +30,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import type { FormErrors } from "@/lib/form-state";
+import { queryKeys } from "@/lib/query-keys";
 
 interface Category {
   id: string;
   name: string;
   icon: string;
+  type: "income" | "expense";
   defaultAmount?: string | null;
 }
 
@@ -63,6 +64,10 @@ export default function TransactionForm({
   mode = "add",
   initialData,
   cancelHref,
+  inPlace = false,
+  onCompletedAction,
+  onCancelAction,
+  onTypeChangeAction,
 }: {
   sheetId: string;
   categories: Category[];
@@ -71,28 +76,66 @@ export default function TransactionForm({
   mode?: "add" | "edit";
   initialData?: TransactionData;
   cancelHref: string;
+  inPlace?: boolean;
+  onCompletedAction?: () => void;
+  onCancelAction?: () => void;
+  onTypeChangeAction?: (nextType: "income" | "expense") => void;
 }) {
   const router = useRouter();
-  const type = initialData?.type ?? transactionType ?? "expense";
+  const queryClient = useQueryClient();
+  const [type, setType] = useState<"income" | "expense">(
+    initialData?.type ?? transactionType ?? "expense",
+  );
   const isExpense = type === "expense";
-  const titlePrefix = mode === "edit" ? "Edit" : "Add";
   const formAction = mode === "edit" ? updateTransaction : addTransaction;
   const [amount, setAmount] = useState(initialData?.amount ?? "");
+  const [selectedCategoryId, setSelectedCategoryId] = useState(
+    initialData?.categoryId ?? "",
+  );
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  const filteredCategories = categories.filter((item) => item.type === type);
+  const resolvedCategoryId = filteredCategories.some(
+    (category) => category.id === selectedCategoryId,
+  )
+    ? selectedCategoryId
+    : "";
+  const handleTypeChange = (nextType: "income" | "expense") => {
+    if (mode !== "add") {
+      return;
+    }
+
+    setType(nextType);
+    setSelectedCategoryId("");
+    onTypeChangeAction?.(nextType);
+  };
+
   const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
     if (mode !== "add") return;
-    const category = categories.find((item) => item.id === categoryId);
+    const category = filteredCategories.find((item) => item.id === categoryId);
     if (category?.defaultAmount) {
       setAmount(category.defaultAmount);
     }
   };
 
   const getFieldError = (field: string) => fieldErrors[field];
+  const invalidateTransactionQueries = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["sheet", sheetId, "history"] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard(sheetId) }),
+      queryClient.invalidateQueries({
+        queryKey: ["sheet", sheetId, "transactions-overview"],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["sheet", sheetId, "category-transactions"],
+      }),
+    ]);
+  };
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -103,7 +146,14 @@ export default function TransactionForm({
     try {
       const result = await formAction(new FormData(event.currentTarget));
 
+      if (result.success && inPlace) {
+        await invalidateTransactionQueries();
+        onCompletedAction?.();
+        return;
+      }
+
       if (result.redirectTo) {
+        await invalidateTransactionQueries();
         router.push(result.redirectTo);
         return;
       }
@@ -126,7 +176,14 @@ export default function TransactionForm({
     try {
       const result = await deleteTransaction(new FormData(event.currentTarget));
 
+      if (result.success && inPlace) {
+        await invalidateTransactionQueries();
+        onCompletedAction?.();
+        return;
+      }
+
       if (result.redirectTo) {
+        await invalidateTransactionQueries();
         router.push(result.redirectTo);
         return;
       }
@@ -141,15 +198,8 @@ export default function TransactionForm({
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <ReceiptText className="h-4 w-4" />
-          {titlePrefix} {isExpense ? "Expense" : "Income"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {categories.length === 0 ? (
+    <div>
+      {filteredCategories.length === 0 ? (
           <div className="space-y-4 py-6 text-center">
             <p className="text-muted-foreground">
               No categories found for this sheet (type: {type}). Please add some
@@ -166,10 +216,12 @@ export default function TransactionForm({
               </Button>
             </div>
           </div>
-        ) : (
-          <form onSubmit={onSubmit} className="space-y-4">
+      ) : (
+        <form onSubmit={onSubmit} className="space-y-4">
             <input type="hidden" name="type" value={type} />
             <input type="hidden" name="sheetId" value={sheetId} />
+            <input type="hidden" name="returnTo" value={cancelHref} />
+            <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
             {mode === "edit" && initialData && (
               <input
                 type="hidden"
@@ -183,13 +235,41 @@ export default function TransactionForm({
                 {formError}
               </p>
             ) : null}
+            {mode === "add" ? (
+              <div className="inline-flex w-full rounded-lg border border-border bg-muted/30 p-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => handleTypeChange("expense")}
+                  className={`h-9 flex-1 rounded-md ${
+                    type === "expense"
+                      ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Expense
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => handleTypeChange("income")}
+                  className={`h-9 flex-1 rounded-md ${
+                    type === "income"
+                      ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Income
+                </Button>
+              </div>
+            ) : null}
 
             <div className="space-y-2">
               <Label htmlFor="categoryId">Category</Label>
               <CategoryPicker
-                categories={categories}
+                categories={filteredCategories}
                 name="categoryId"
-                defaultValue={initialData?.categoryId}
+                value={resolvedCategoryId}
                 onValueChangeAction={handleCategoryChange}
                 placeholder="Select category"
                 required
@@ -218,8 +298,7 @@ export default function TransactionForm({
                 placeholder="0.00"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
-                required
-                autoFocus
+                autoFocus={!inPlace}
                 aria-invalid={Boolean(getFieldError("amount"))}
               />
               {getFieldError("amount") ? (
@@ -288,59 +367,71 @@ export default function TransactionForm({
                 loading={loading}
                 trackFormStatus={false}
               />
-              <Button variant="outline" className="w-full" asChild>
-                <Link href={cancelHref}>Cancel</Link>
-              </Button>
-            </div>
-          </form>
-        )}
-
-        {mode === "edit" && initialData && (
-          <div className="mt-8 pt-8 border-t">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="w-full">
-                  Delete Transaction
+              {inPlace ? (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  type="button"
+                  onClick={onCancelAction}
+                >
+                  Cancel
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete this transaction.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                {deleteError ? (
-                  <p className="text-sm font-medium text-destructive">
-                    {deleteError}
-                  </p>
-                ) : null}
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <form onSubmit={onDelete} className="mt-2 sm:mt-0">
-                    <input type="hidden" name="sheetId" value={sheetId} />
-                    <input
-                      type="hidden"
-                      name="transactionId"
-                      value={initialData.id}
+              ) : (
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href={cancelHref}>Cancel</Link>
+                </Button>
+              )}
+            </div>
+        </form>
+      )}
+
+      {mode === "edit" && initialData && (
+        <div className="mt-8 pt-8 border-t">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="w-full">
+                Delete Transaction
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete this transaction.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              {deleteError ? (
+                <p className="text-sm font-medium text-destructive">
+                  {deleteError}
+                </p>
+              ) : null}
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <form onSubmit={onDelete} className="mt-2 sm:mt-0">
+                  <input type="hidden" name="sheetId" value={sheetId} />
+                  <input type="hidden" name="returnTo" value={cancelHref} />
+                  <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
+                  <input
+                    type="hidden"
+                    name="transactionId"
+                    value={initialData.id}
+                  />
+                  <AlertDialogAction asChild variant="destructive">
+                    <LoadingButton
+                      type="submit"
+                      variant="destructive"
+                      text="Confirm Delete"
+                      loadingText="Deleting..."
+                      loading={deleteLoading}
+                      trackFormStatus={false}
                     />
-                    <AlertDialogAction asChild variant="destructive">
-                      <LoadingButton
-                        type="submit"
-                        variant="destructive"
-                        text="Confirm Delete"
-                        loadingText="Deleting..."
-                        loading={deleteLoading}
-                        trackFormStatus={false}
-                      />
-                    </AlertDialogAction>
-                  </form>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                  </AlertDialogAction>
+                </form>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import Link from "next/link";
+import { useState } from "react";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Calendar, LayoutGrid, TrendingDown, TrendingUp } from "lucide-react";
 import { createElement } from "react";
@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { TabHeader } from "@/components/tab-header";
 import { BackgroundSyncIndicator } from "@/components/background-sync-indicator";
 import { FormattedAmount } from "@/components/formatted-amount";
+import { CategoryFormDialog } from "@/app/sheet/[sheetId]/settings/category/category-form-dialog";
+import { usePrefetchGuard } from "@/components/use-prefetch-guard";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { queryKeys } from "@/lib/query-keys";
 import { createClient } from "@/lib/supabase/client";
@@ -79,13 +81,23 @@ export function CategoryList({
   sheetId,
   canEditCategory,
   canAddCategory,
+  addDialogOpen: controlledAddDialogOpen,
+  onAddDialogOpenChange,
 }: {
   sheetId: string;
   canEditCategory: boolean;
   canAddCategory: boolean;
+  addDialogOpen?: boolean;
+  onAddDialogOpenChange?: (open: boolean) => void;
 }) {
+  const queryClient = useQueryClient();
+  const { shouldPrefetch } = usePrefetchGuard();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [internalAddDialogOpen, setInternalAddDialogOpen] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const addDialogOpen = controlledAddDialogOpen ?? internalAddDialogOpen;
+  const setAddDialogOpen = onAddDialogOpenChange ?? setInternalAddDialogOpen;
   const selectedType =
     searchParams.get("type") === "income" ? "income" : "expense";
   const categoriesQuery = useQuery({
@@ -102,6 +114,31 @@ export function CategoryList({
     const params = new URLSearchParams(searchParams.toString());
     params.set("type", type);
     router.push(`/sheet/${sheetId}/settings/category?${params.toString()}`);
+  };
+  const prefetchCategoryForm = (categoryId: string) => {
+    if (!shouldPrefetch(`category-form:${categoryId}`)) {
+      return;
+    }
+
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.categoryForm(sheetId, categoryId),
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from("categories")
+          .select(
+            "id, name, icon, type, budget, default_amount, due_date, due_reminder_frequency",
+          )
+          .eq("sheet_id", sheetId)
+          .eq("id", categoryId)
+          .maybeSingle();
+
+        if (error) {
+          throw error;
+        }
+
+        return data;
+      },
+    });
   };
 
   if (
@@ -162,6 +199,20 @@ export function CategoryList({
   if (categoryList.length === 0) {
     return (
       <div className="space-y-4">
+        {addDialogOpen ? (
+          <CategoryFormDialog
+            sheetId={sheetId}
+            mode="add"
+            returnType={selectedType}
+            initialType={selectedType}
+            inPlace
+            asDialog
+            open={true}
+            onOpenChangeAction={setAddDialogOpen}
+            onCancelAction={() => setAddDialogOpen(false)}
+            onCompletedAction={() => setAddDialogOpen(false)}
+          />
+        ) : null}
         <TabHeader
           value={selectedType}
           onChangeAction={(value) =>
@@ -175,14 +226,16 @@ export function CategoryList({
             No {selectedType} categories yet.
           </p>
           {canAddCategory ? (
-            <Link
-              href={`/sheet/${sheetId}/settings/category/add?type=${selectedType}`}
-              className="mt-4 inline-block"
-            >
-              <Button variant="outline" size="sm">
+            <div className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setAddDialogOpen(true)}
+              >
                 Create your first one
               </Button>
-            </Link>
+            </div>
           ) : null}
         </div>
       </div>
@@ -192,6 +245,38 @@ export function CategoryList({
   return (
     <div className="relative space-y-4">
       <BackgroundSyncIndicator active={isRefreshing} />
+      {addDialogOpen ? (
+        <CategoryFormDialog
+          sheetId={sheetId}
+          mode="add"
+          returnType={selectedType}
+          initialType={selectedType}
+          inPlace
+          asDialog
+          open={true}
+          onOpenChangeAction={setAddDialogOpen}
+          onCancelAction={() => setAddDialogOpen(false)}
+          onCompletedAction={() => setAddDialogOpen(false)}
+        />
+      ) : null}
+      {editingCategoryId ? (
+        <CategoryFormDialog
+          sheetId={sheetId}
+          mode="edit"
+          categoryId={editingCategoryId}
+          returnType={selectedType}
+          inPlace
+          asDialog
+          open={true}
+          onOpenChangeAction={(open) => {
+            if (!open) {
+              setEditingCategoryId(null);
+            }
+          }}
+          onCancelAction={() => setEditingCategoryId(null)}
+          onCompletedAction={() => setEditingCategoryId(null)}
+        />
+      ) : null}
       <TabHeader
         value={selectedType}
         onChangeAction={(value) =>
@@ -259,13 +344,17 @@ export function CategoryList({
         );
 
         return canEditCategory ? (
-          <Link
+          <button
             key={category.id}
-            href={`/sheet/${sheetId}/settings/category/${category.id}/edit?type=${selectedType}`}
-            className="block"
+            type="button"
+            className="block w-full text-left"
+            onMouseEnter={() => prefetchCategoryForm(category.id)}
+            onFocus={() => prefetchCategoryForm(category.id)}
+            onTouchStart={() => prefetchCategoryForm(category.id)}
+            onClick={() => setEditingCategoryId(category.id)}
           >
             {content}
-          </Link>
+          </button>
         ) : (
           <div key={category.id}>{content}</div>
         );

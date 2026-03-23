@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  PlusCircle,
+  CreditCard,
+  LayoutGrid,
   Repeat,
   SlidersHorizontal,
   Users,
-  WalletCards,
 } from "lucide-react";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchRecurringOverview } from "@/lib/recurring-overview";
@@ -163,7 +163,7 @@ export function SettingsLinks({ sheetId }: { sheetId: string }) {
         onTouchStart={() => prefetchRouteAndQueriesForTouch("category")}
         className={linkClassName()}
       >
-        <PlusCircle className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        <LayoutGrid className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
         Categories
       </Link>
       <Link
@@ -183,7 +183,7 @@ export function SettingsLinks({ sheetId }: { sheetId: string }) {
         onTouchStart={() => prefetchRouteAndQueriesForTouch("paymentTypes")}
         className={linkClassName()}
       >
-        <WalletCards className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        <CreditCard className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
         Payment Types
       </Link>
       <Link

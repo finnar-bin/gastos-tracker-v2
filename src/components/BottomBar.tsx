@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, LayoutList, PlusCircle, History, Settings } from "lucide-react";
@@ -7,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useSheetPermissions } from "@/hooks/use-sheet-permissions";
 import { type SheetRole } from "@/lib/auth/sheet-permissions";
 import { useSheetNavigationPrefetch } from "@/components/use-sheet-navigation-prefetch";
+import { TransactionFormDialog } from "@/app/sheet/[sheetId]/transactions/transaction-form-dialog";
 
 interface BottomBarProps {
   sheetId: string;
@@ -15,11 +17,13 @@ interface BottomBarProps {
 
 export function BottomBar({ sheetId, role }: BottomBarProps) {
   const pathname = usePathname();
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const permissions = useSheetPermissions(role);
   const {
     routes,
     prefetchNavigationTargetForTouch,
     prefetchRouteForTouch,
+    prefetchAddTransactionFormForIntent,
   } = useSheetNavigationPrefetch(sheetId);
 
   const navItems = [
@@ -39,7 +43,7 @@ export function BottomBar({ sheetId, role }: BottomBarProps) {
       ? [
           {
             name: "Add",
-            href: routes.addTransaction,
+            href: `add-${sheetId}`,
             icon: PlusCircle,
             isAction: true,
           },
@@ -74,14 +78,15 @@ export function BottomBar({ sheetId, role }: BottomBarProps) {
 
           if (item.isAction) {
             return (
-              <Link
+              <button
                 key={item.href}
-                href={item.href}
-                onTouchStart={() => prefetchRouteForTouch(item.href)}
+                type="button"
+                onTouchStart={prefetchAddTransactionFormForIntent}
+                onClick={() => setAddDialogOpen(true)}
                 className="relative -top-8 flex flex-col items-center justify-center gap-1 group w-16 h-16 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
               >
                 <item.icon className="h-7 w-7" />
-              </Link>
+              </button>
             );
           }
 
@@ -123,6 +128,20 @@ export function BottomBar({ sheetId, role }: BottomBarProps) {
           );
         })}
       </div>
+      {addDialogOpen ? (
+        <TransactionFormDialog
+          sheetId={sheetId}
+          mode="add"
+          transactionType="expense"
+          cancelHref={pathname}
+          inPlace
+          asDialog
+          open={addDialogOpen}
+          onOpenChangeAction={setAddDialogOpen}
+          onCancelAction={() => setAddDialogOpen(false)}
+          onCompletedAction={() => setAddDialogOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

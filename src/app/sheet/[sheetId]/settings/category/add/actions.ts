@@ -30,6 +30,7 @@ export async function addCategory(
     : null;
   const dueReminderFrequencyValue = formData.get("dueReminderFrequency");
   const returnType = formData.get("returnType") as string | null;
+  const inPlace = formData.get("inPlace") === "1";
   const dueReminderFrequency =
     typeof dueReminderFrequencyValue === "string" &&
     dueReminderFrequencyValue !== "none"
@@ -94,6 +95,10 @@ export async function addCategory(
   } catch (error) {
     console.error("Error adding category:", error);
     return { error: "Failed to save category. Please review the form and try again." };
+  }
+
+  if (inPlace) {
+    return { success: "Category created." };
   }
 
   return {

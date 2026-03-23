@@ -1,7 +1,7 @@
 import { requireSheetPermission } from "@/lib/auth/sheets";
 import { ArrowLeft } from "lucide-react";
 import { Header } from "@/components/Header";
-import { RecurringFormLoader } from "../../recurring-form-loader";
+import { RecurringFormDialog } from "../../recurring-form-dialog";
 
 export default async function EditRecurringPage({
   params,
@@ -24,7 +24,7 @@ export default async function EditRecurringPage({
         subtitle={sheet.name}
       />
 
-      <RecurringFormLoader sheetId={sheetId} mode="edit" recurringId={recurringId} />
+      <RecurringFormDialog sheetId={sheetId} mode="edit" recurringId={recurringId} />
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import { createElement } from "react";
-import Link from "next/link";
 import { LayoutGrid } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { UserAvatar } from "@/components/user-avatar";
@@ -22,17 +21,17 @@ type TransactionHistoryCardData = {
 };
 
 export function TransactionCard({
-  sheetId,
   tx,
-  returnTo,
   currency,
   canEditTransaction = true,
+  onEditAction,
+  onEditIntentAction,
 }: {
-  sheetId: string;
   tx: TransactionHistoryCardData;
-  returnTo?: string;
   currency?: string;
   canEditTransaction?: boolean;
+  onEditAction?: () => void;
+  onEditIntentAction?: () => void;
 }) {
   const categoryIcon = getLucideIcon(tx.categoryIcon) || LayoutGrid;
   const paymentIcon = tx.paymentTypeIcon
@@ -40,14 +39,6 @@ export function TransactionCard({
     : null;
   const creatorName =
     tx.creatorDisplayName || tx.creatorEmail || "Unknown user";
-
-  const editParams = new URLSearchParams();
-  if (returnTo) {
-    editParams.set("returnTo", returnTo);
-  }
-  const editHref = `/sheet/${sheetId}/transactions/${tx.id}/edit${
-    editParams.size > 0 ? `?${editParams.toString()}` : ""
-  }`;
 
   const content = (
     <Card className="overflow-hidden shadow-sm cursor-pointer hover:shadow-lg transition-all duration-300">
@@ -105,9 +96,20 @@ export function TransactionCard({
     return content;
   }
 
-  return (
-    <Link href={editHref} className="block">
-      {content}
-    </Link>
-  );
+  if (onEditAction) {
+    return (
+      <button
+        type="button"
+        onMouseEnter={onEditIntentAction}
+        onFocus={onEditIntentAction}
+        onTouchStart={onEditIntentAction}
+        onClick={onEditAction}
+        className="block w-full text-left"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return content;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { addRecurringTransaction } from "../add/actions";
 import {
@@ -20,9 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { Repeat } from "lucide-react";
 import { MAX_DECIMAL_AMOUNT } from "@/lib/validation/amount";
 import {
   AlertDialog,
@@ -36,6 +35,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import type { FormErrors } from "@/lib/form-state";
+import { queryKeys } from "@/lib/query-keys";
 
 interface Category {
   id: string;
@@ -68,29 +68,33 @@ export default function RecurringTransactionForm({
   paymentTypes,
   mode = "add",
   initialData,
+  cancelHref,
+  inPlace = false,
+  onCompletedAction,
+  onCancelAction,
 }: {
   sheetId: string;
   categories: Category[];
   paymentTypes: PaymentType[];
   mode?: "add" | "edit";
   initialData?: RecurringTransactionData;
+  cancelHref?: string;
+  inPlace?: boolean;
+  onCompletedAction?: () => void;
+  onCancelAction?: () => void;
 }) {
   const router = useRouter();
-  const initialType = initialData?.type ?? "expense";
-  const initialTypeCategories = categories.filter(
-    (category) => category.type === initialType,
-  );
-  const [transactionType, setTransactionType] = useState<"income" | "expense">(
-    initialType,
-  );
+  const queryClient = useQueryClient();
+  const initialType = initialData?.type ?? "";
+  const [transactionType, setTransactionType] = useState<
+    "income" | "expense" | ""
+  >(initialType);
   const [frequency, setFrequency] = useState<string>(
-    initialData?.frequency ?? "monthly",
+    initialData?.frequency ?? "",
   );
-  const [amount, setAmount] = useState<string>(
-    initialData?.amount ?? initialTypeCategories[0]?.defaultAmount ?? "",
-  );
+  const [amount, setAmount] = useState<string>(initialData?.amount ?? "");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
-    initialData?.categoryId ?? initialTypeCategories[0]?.id ?? "",
+    initialData?.categoryId ?? "",
   );
   const [dayOfMonth, setDayOfMonth] = useState<string>(
     initialData?.dayOfMonth ?? "",
@@ -107,6 +111,7 @@ export default function RecurringTransactionForm({
   const formAction =
     mode === "edit" ? updateRecurringTransaction : addRecurringTransaction;
   const getFieldError = (field: string) => fieldErrors[field];
+  const effectiveCancelHref = cancelHref ?? `/sheet/${sheetId}/settings/recurring`;
 
   const filteredCategories = categories.filter(
     (category) => category.type === transactionType,
@@ -115,39 +120,29 @@ export default function RecurringTransactionForm({
     (category) => category.id === selectedCategoryId,
   )
     ? selectedCategoryId
-    : (filteredCategories[0]?.id ?? "");
+    : "";
 
   const handleTypeChange = (value: string) => {
-    const nextType = value as "income" | "expense";
+    const nextType = value as "income" | "expense" | "";
     setTransactionType(nextType);
-
-    const nextCategories = categories.filter(
-      (category) => category.type === nextType,
-    );
-    const nextCategoryId = nextCategories.some(
-      (category) => category.id === selectedCategoryId,
-    )
-      ? selectedCategoryId
-      : (nextCategories[0]?.id ?? "");
-
-    setSelectedCategoryId(nextCategoryId);
     if (mode === "add") {
-      const nextCategory = nextCategories.find(
-        (category) => category.id === nextCategoryId,
-      );
-      if (nextCategory?.defaultAmount) {
-        setAmount(nextCategory.defaultAmount);
-      }
+      setSelectedCategoryId("");
     }
   };
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategoryId(categoryId);
-    if (mode !== "add") return;
-    const category = filteredCategories.find((item) => item.id === categoryId);
-    if (category?.defaultAmount) {
-      setAmount(category.defaultAmount);
-    }
+  };
+
+  const invalidateQueries = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.recurring(sheetId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard(sheetId) }),
+      queryClient.invalidateQueries({ queryKey: ["sheet", sheetId, "history"] }),
+      queryClient.invalidateQueries({
+        queryKey: ["sheet", sheetId, "transactions-overview"],
+      }),
+    ]);
   };
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -159,7 +154,14 @@ export default function RecurringTransactionForm({
     try {
       const result = await formAction(new FormData(event.currentTarget));
 
+      if (result.success && inPlace) {
+        await invalidateQueries();
+        onCompletedAction?.();
+        return;
+      }
+
       if (result.redirectTo) {
+        await invalidateQueries();
         router.push(result.redirectTo);
         return;
       }
@@ -186,7 +188,14 @@ export default function RecurringTransactionForm({
         new FormData(event.currentTarget),
       );
 
+      if (result.success && inPlace) {
+        await invalidateQueries();
+        onCompletedAction?.();
+        return;
+      }
+
       if (result.redirectTo) {
+        await invalidateQueries();
         router.push(result.redirectTo);
         return;
       }
@@ -203,16 +212,9 @@ export default function RecurringTransactionForm({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <Repeat className="h-4 w-4" /> {mode === "edit" ? "Edit" : "New"}{" "}
-          Template
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {filteredCategories.length === 0 ? (
-          <div className="py-6 text-center space-y-4">
+    <div>
+      {transactionType !== "" && filteredCategories.length === 0 ? (
+        <div className="py-6 text-center space-y-4">
             <p className="text-muted-foreground">
               You haven&apos;t created any {transactionType} categories for this
               sheet yet. You need at least one category to set up a recurring
@@ -223,13 +225,25 @@ export default function RecurringTransactionForm({
                 Create Category
               </Link>
             </Button>
-            <Button variant="outline" asChild className="w-full">
-              <Link href={`/sheet/${sheetId}/settings/recurring`}>Back</Link>
-            </Button>
-          </div>
-        ) : (
-          <form onSubmit={onSubmit} className="space-y-4">
+            {inPlace ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={onCancelAction}
+              >
+                Back
+              </Button>
+            ) : (
+              <Button variant="outline" asChild className="w-full">
+                <Link href={effectiveCancelHref}>Back</Link>
+              </Button>
+            )}
+        </div>
+      ) : (
+        <form onSubmit={onSubmit} className="space-y-4">
             <input type="hidden" name="sheetId" value={sheetId} />
+            <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
             {mode === "edit" && initialData && (
               <input type="hidden" name="recurringId" value={initialData.id} />
             )}
@@ -244,7 +258,7 @@ export default function RecurringTransactionForm({
               <Label htmlFor="type">Type</Label>
               <Select
                 name="type"
-                value={transactionType}
+                value={transactionType === "" ? undefined : transactionType}
                 onValueChange={handleTypeChange}
               >
                 <SelectTrigger className="w-full">
@@ -270,7 +284,6 @@ export default function RecurringTransactionForm({
                 value={resolvedCategoryId}
                 onValueChangeAction={handleCategoryChange}
                 placeholder="Select category"
-                required
                 triggerClassName={
                   getFieldError("categoryId")
                     ? "border-destructive focus-visible:ring-destructive"
@@ -296,7 +309,6 @@ export default function RecurringTransactionForm({
                 placeholder="0.00"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
-                required
                 aria-invalid={Boolean(getFieldError("amount"))}
               />
               {getFieldError("amount") ? (
@@ -313,7 +325,6 @@ export default function RecurringTransactionForm({
                   paymentTypes={paymentTypes}
                   name="paymentType"
                   defaultValue={initialData?.paymentType}
-                  required
                   triggerClassName={
                     getFieldError("paymentType")
                       ? "border-destructive focus-visible:ring-destructive"
@@ -332,7 +343,7 @@ export default function RecurringTransactionForm({
               <Label htmlFor="frequency">Frequency</Label>
               <Select
                 name="frequency"
-                defaultValue={initialData?.frequency ?? "monthly"}
+                value={frequency === "" ? undefined : frequency}
                 onValueChange={(val) => setFrequency(val)}
               >
                 <SelectTrigger className="w-full">
@@ -401,56 +412,65 @@ export default function RecurringTransactionForm({
               />
             </div>
 
-            <div className="pt-4 space-y-4">
+            <div className="pt-2 space-y-4">
               <SubmitButton disabled={isInvalidDay} loading={loading} mode={mode} />
-              <Button variant="outline" className="w-full" asChild>
-                <Link href={`/sheet/${sheetId}/settings/recurring`}>
+              {inPlace ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={onCancelAction}
+                >
                   Cancel
-                </Link>
-              </Button>
-            </div>
-          </form>
-        )}
-
-        {mode === "edit" && initialData && (
-          <div className="mt-8 pt-8 border-t">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="w-full">
-                  Delete Schedule
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete this recurring schedule. Past
-                    transactions will not be affected.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                {deleteError ? (
-                  <p className="text-sm font-medium text-destructive">
-                    {deleteError}
-                  </p>
-                ) : null}
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <form onSubmit={onDelete} className="mt-2 sm:mt-0">
-                    <input type="hidden" name="sheetId" value={sheetId} />
-                    <input
-                      type="hidden"
-                      name="recurringId"
-                      value={initialData.id}
-                    />
-                    <DeleteButton loading={deleteLoading} />
-                  </form>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              ) : (
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href={effectiveCancelHref}>Cancel</Link>
+                </Button>
+              )}
+            </div>
+        </form>
+      )}
+
+      {mode === "edit" && initialData && (
+        <div className="mt-8 pt-8 border-t">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="w-full">
+                Delete Schedule
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete this recurring schedule. Past
+                  transactions will not be affected.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              {deleteError ? (
+                <p className="text-sm font-medium text-destructive">
+                  {deleteError}
+                </p>
+              ) : null}
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <form onSubmit={onDelete} className="mt-2 sm:mt-0">
+                  <input type="hidden" name="sheetId" value={sheetId} />
+                  <input
+                    type="hidden"
+                    name="recurringId"
+                    value={initialData.id}
+                  />
+                  <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
+                  <DeleteButton loading={deleteLoading} />
+                </form>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
+    </div>
   );
 }
 

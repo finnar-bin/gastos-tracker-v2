@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import { Header } from "@/components/Header";
 import { requireSheetPermission } from "@/lib/auth/sheets";
-import { PaymentTypeFormLoader } from "../../payment-type-form-loader";
+import { PaymentTypeFormDialog } from "../../payment-type-form-dialog";
 
 export default async function EditPaymentTypePage({
   params,
@@ -24,7 +24,7 @@ export default async function EditPaymentTypePage({
         subtitle={sheet.name}
       />
 
-      <PaymentTypeFormLoader sheetId={sheetId} paymentTypeId={paymentTypeId} />
+      <PaymentTypeFormDialog sheetId={sheetId} paymentTypeId={paymentTypeId} />
     </div>
   );
 }

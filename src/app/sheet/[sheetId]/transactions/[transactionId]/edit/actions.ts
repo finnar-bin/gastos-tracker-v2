@@ -8,6 +8,19 @@ import { requireSheetPermission } from "@/lib/auth/sheets";
 import type { FormActionResult } from "@/lib/form-state";
 import { parseAndValidateAmount } from "@/lib/validation/amount";
 
+function getSafeReturnTo(sheetId: string, returnTo?: string | null) {
+  if (!returnTo) {
+    return `/sheet/${sheetId}/history`;
+  }
+
+  const normalized = returnTo.startsWith("/") ? returnTo : `/${returnTo}`;
+  if (normalized.startsWith(`/sheet/${sheetId}`)) {
+    return normalized;
+  }
+
+  return `/sheet/${sheetId}/history`;
+}
+
 export async function updateTransaction(
   formData: FormData,
 ): Promise<FormActionResult> {
@@ -32,6 +45,8 @@ export async function updateTransaction(
       : null;
   const dateStr = formData.get("date") as string;
   const date = dateStr || new Date().toISOString().split("T")[0];
+  const returnTo = formData.get("returnTo") as string | null;
+  const inPlace = formData.get("inPlace") === "1";
 
   const fieldErrors: FormActionResult["fieldErrors"] = {};
   if (!transactionId) fieldErrors.transactionId = "Invalid transaction.";
@@ -83,7 +98,11 @@ export async function updateTransaction(
     return { error: "Failed to save transaction. Please review the form and try again." };
   }
 
-  return { redirectTo: `/sheet/${sheetId}/history` };
+  if (inPlace) {
+    return { success: "Transaction updated." };
+  }
+
+  return { redirectTo: getSafeReturnTo(sheetId, returnTo) };
 }
 
 export async function deleteTransaction(
@@ -100,6 +119,8 @@ export async function deleteTransaction(
 
   const transactionId = formData.get("transactionId") as string;
   const sheetId = formData.get("sheetId") as string;
+  const returnTo = formData.get("returnTo") as string | null;
+  const inPlace = formData.get("inPlace") === "1";
   const fieldErrors: FormActionResult["fieldErrors"] = {};
 
   if (!transactionId) fieldErrors.transactionId = "Invalid transaction.";
@@ -129,5 +150,9 @@ export async function deleteTransaction(
     return { error: "Failed to delete transaction. Please try again." };
   }
 
-  return { redirectTo: `/sheet/${sheetId}/history` };
+  if (inPlace) {
+    return { success: "Transaction deleted." };
+  }
+
+  return { redirectTo: getSafeReturnTo(sheetId, returnTo) };
 }

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CreditCard } from "lucide-react";
 import { addPaymentType } from "./actions";
 import {
   deletePaymentType,
@@ -24,9 +24,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconPicker } from "@/components/icon-picker";
 import type { FormErrors } from "@/lib/form-state";
+import { queryKeys } from "@/lib/query-keys";
 
 export type PaymentTypeFormData = {
   id: string;
@@ -56,12 +56,21 @@ export default function PaymentTypeForm({
   sheetId,
   mode = "add",
   initialData,
+  cancelHref,
+  inPlace = false,
+  onCompletedAction,
+  onCancelAction,
 }: {
   sheetId: string;
   mode?: "add" | "edit";
   initialData?: PaymentTypeFormData;
+  cancelHref?: string;
+  inPlace?: boolean;
+  onCompletedAction?: () => void;
+  onCancelAction?: () => void;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [selectedIcon, setSelectedIcon] = useState(initialData?.icon ?? "");
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
@@ -70,6 +79,19 @@ export default function PaymentTypeForm({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const formAction = mode === "edit" ? updatePaymentType : addPaymentType;
   const getFieldError = (field: string) => fieldErrors[field];
+  const effectiveCancelHref = cancelHref ?? `/sheet/${sheetId}/settings/payment-types`;
+
+  const invalidateQueries = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.paymentTypes(sheetId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.recurring(sheetId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard(sheetId) }),
+      queryClient.invalidateQueries({
+        queryKey: ["sheet", sheetId, "transactions-overview"],
+      }),
+      queryClient.invalidateQueries({ queryKey: ["sheet", sheetId, "history"] }),
+    ]);
+  };
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -80,7 +102,14 @@ export default function PaymentTypeForm({
     try {
       const result = await formAction(new FormData(event.currentTarget));
 
+      if (result.success && inPlace) {
+        await invalidateQueries();
+        onCompletedAction?.();
+        return;
+      }
+
       if (result.redirectTo) {
+        await invalidateQueries();
         router.push(result.redirectTo);
         return;
       }
@@ -103,7 +132,14 @@ export default function PaymentTypeForm({
     try {
       const result = await deletePaymentType(new FormData(event.currentTarget));
 
+      if (result.success && inPlace) {
+        await invalidateQueries();
+        onCompletedAction?.();
+        return;
+      }
+
       if (result.redirectTo) {
+        await invalidateQueries();
         router.push(result.redirectTo);
         return;
       }
@@ -118,16 +154,11 @@ export default function PaymentTypeForm({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <CreditCard className="h-4 w-4" /> Payment Type Details
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} className="space-y-4">
+    <div>
+      <form onSubmit={onSubmit} className="space-y-4">
           <input type="hidden" name="sheetId" value={sheetId} />
           <input type="hidden" name="icon" value={selectedIcon} />
+          <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
           {mode === "edit" && initialData ? (
             <input type="hidden" name="paymentTypeId" value={initialData.id} />
           ) : null}
@@ -145,7 +176,6 @@ export default function PaymentTypeForm({
               name="name"
               placeholder="e.g. Debit Card"
               defaultValue={initialData?.name ?? ""}
-              required
               aria-invalid={Boolean(getFieldError("name"))}
             />
             {getFieldError("name") ? (
@@ -164,74 +194,79 @@ export default function PaymentTypeForm({
               maxRows={4}
             />
             {getFieldError("icon") ? (
-              <p className="text-[10px] text-destructive font-medium">
+              <p className="text-xs font-medium text-destructive">
                 {getFieldError("icon")}
-              </p>
-            ) : !selectedIcon ? (
-              <p className="text-[10px] text-destructive font-medium">
-                Please select an icon for the payment type.
               </p>
             ) : null}
           </div>
 
-          <div className="pt-4 space-y-4">
-            <SubmitButton disabled={!selectedIcon} loading={loading} mode={mode} />
-            <Button variant="outline" className="w-full" asChild>
-              <Link href={`/sheet/${sheetId}/settings/payment-types`}>
+          <div className="pt-2 space-y-4">
+            <SubmitButton loading={loading} mode={mode} />
+            {inPlace ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={onCancelAction}
+              >
                 Cancel
-              </Link>
-            </Button>
+              </Button>
+            ) : (
+              <Button variant="outline" className="w-full" asChild>
+                <Link href={effectiveCancelHref}>Cancel</Link>
+              </Button>
+            )}
           </div>
-        </form>
+      </form>
 
-        {mode === "edit" && initialData ? (
-          <div className="mt-8 pt-8 border-t">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="w-full">
-                  Delete Payment Type
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. Existing transactions using
-                    this payment type will keep their transaction data.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                {deleteError ? (
-                  <p className="text-sm font-medium text-destructive">
-                    {deleteError}
-                  </p>
-                ) : null}
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <form onSubmit={onDelete} className="mt-2 sm:mt-0">
-                    <input type="hidden" name="sheetId" value={sheetId} />
-                    <input
-                      type="hidden"
-                      name="paymentTypeId"
-                      value={initialData.id}
-                    />
-                    <DeleteButton loading={deleteLoading} />
-                  </form>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
+      {mode === "edit" && initialData ? (
+        <div className="mt-8 pt-8 border-t">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="w-full">
+                Delete Payment Type
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. Existing transactions using
+                  this payment type will keep their transaction data.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              {deleteError ? (
+                <p className="text-sm font-medium text-destructive">
+                  {deleteError}
+                </p>
+              ) : null}
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <form onSubmit={onDelete} className="mt-2 sm:mt-0">
+                  <input type="hidden" name="sheetId" value={sheetId} />
+                  <input
+                    type="hidden"
+                    name="paymentTypeId"
+                    value={initialData.id}
+                  />
+                  <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
+                  <DeleteButton loading={deleteLoading} />
+                </form>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
 function SubmitButton({
-  disabled,
+  disabled = false,
   loading = false,
   mode,
 }: {
-  disabled: boolean;
+  disabled?: boolean;
   loading?: boolean;
   mode: "add" | "edit";
 }) {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -16,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useSheetPermissions } from "@/hooks/use-sheet-permissions";
 import { type SheetRole } from "@/lib/auth/sheet-permissions";
 import { useSheetNavigationPrefetch } from "@/components/use-sheet-navigation-prefetch";
+import { TransactionFormDialog } from "@/app/sheet/[sheetId]/transactions/transaction-form-dialog";
 
 interface DesktopNavProps {
   sheetId: string;
@@ -24,8 +26,9 @@ interface DesktopNavProps {
 
 export function DesktopNav({ sheetId, role }: DesktopNavProps) {
   const pathname = usePathname();
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const permissions = useSheetPermissions(role);
-  const { routes, prefetchNavigationTarget, prefetchRoute } =
+  const { routes, prefetchNavigationTarget, prefetchRoute, prefetchAddTransactionFormForIntent } =
     useSheetNavigationPrefetch(sheetId);
 
   const navItems = [
@@ -63,20 +66,32 @@ export function DesktopNav({ sheetId, role }: DesktopNavProps) {
 
       {permissions.canAddTransaction && (
         <div className="px-4 pb-6">
-          <Link
-            href={routes.addTransaction}
-            onMouseEnter={() => prefetchRoute(routes.addTransaction)}
-            onFocus={() => prefetchRoute(routes.addTransaction)}
+          <Button
+            type="button"
+            onMouseEnter={prefetchAddTransactionFormForIntent}
+            onFocus={prefetchAddTransactionFormForIntent}
+            onClick={() => setAddDialogOpen(true)}
+            variant="outline"
+            className="w-full justify-start gap-2 border-emerald-700 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-800"
+            size="lg"
           >
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-2 border-emerald-700 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-800"
-              size="lg"
-            >
-              <PlusCircle className="h-5 w-5" />
-              Add Transaction
-            </Button>
-          </Link>
+            <PlusCircle className="h-5 w-5" />
+            Add Transaction
+          </Button>
+          {addDialogOpen ? (
+            <TransactionFormDialog
+              sheetId={sheetId}
+              mode="add"
+              transactionType="expense"
+              cancelHref={pathname}
+              inPlace
+              asDialog
+              open={addDialogOpen}
+              onOpenChangeAction={setAddDialogOpen}
+              onCancelAction={() => setAddDialogOpen(false)}
+              onCompletedAction={() => setAddDialogOpen(false)}
+            />
+          ) : null}
         </div>
       )}
 

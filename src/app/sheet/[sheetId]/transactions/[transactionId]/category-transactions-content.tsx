@@ -1,13 +1,19 @@
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { BackgroundSyncIndicator } from "@/components/background-sync-indicator";
 import { Button } from "@/components/ui/button";
 import { TransactionCard } from "@/components/transaction-card";
+import { TransactionFormDialog } from "@/app/sheet/[sheetId]/transactions/transaction-form-dialog";
 import { fetchCategoryTransactions } from "@/lib/category-transactions";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchSheetCurrency } from "@/lib/sheet-currency";
+import { fetchTransactionFormData } from "@/lib/transaction-form-data";
+import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
 
 export function CategoryTransactionsContent({
   sheetId,
@@ -24,6 +30,8 @@ export function CategoryTransactionsContent({
   categoryType: "income" | "expense";
   canEditTransaction: boolean;
 }) {
+  const queryClient = useQueryClient();
+  const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const now = new Date();
   const parsedYear = Number.parseInt(searchParams.get("year") ?? "", 10);
@@ -68,7 +76,7 @@ export function CategoryTransactionsContent({
     year: selectedYear.toString(),
     type: selectedType,
   });
-  const returnTo = `/sheet/${sheetId}/transactions/${categoryId}?${backParams.toString()}`;
+  const historyReturnTo = `/sheet/${sheetId}/history?${backParams.toString()}&categoryId=${categoryId}&type=${selectedType}`;
 
   if (categoryTransactionsQuery.isLoading && !categoryTransactionsQuery.data) {
     return (
@@ -103,10 +111,56 @@ export function CategoryTransactionsContent({
   const isRefreshing =
     Boolean(categoryTransactionsQuery.data) &&
     (categoryTransactionsQuery.isFetching || currencyQuery.isFetching);
+  const closeEditDialog = () => setEditingTransactionId(null);
+  const handleMutationCompleted = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["sheet", sheetId, "history"] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard(sheetId) }),
+      queryClient.invalidateQueries({
+        queryKey: ["sheet", sheetId, "transactions-overview"],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["sheet", sheetId, "category-transactions"],
+      }),
+    ]);
+    closeEditDialog();
+  };
+  const prefetchEditTransactionForm = (transactionId: string) => {
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.transactionForm(sheetId, "edit", transactionId, "unknown"),
+      queryFn: () =>
+        fetchTransactionFormData({
+          supabase,
+          sheetId,
+          mode: "edit",
+          transactionId,
+        }),
+    });
+  };
 
   return (
     <div className="space-y-3">
       <BackgroundSyncIndicator active={isRefreshing} />
+      {editingTransactionId ? (
+        <TransactionFormDialog
+          sheetId={sheetId}
+          mode="edit"
+          transactionId={editingTransactionId}
+          cancelHref={historyReturnTo}
+          inPlace
+          asDialog
+          open={true}
+          onOpenChangeAction={(open) => {
+            if (!open) {
+              closeEditDialog();
+            }
+          }}
+          onCancelAction={closeEditDialog}
+          onCompletedAction={() => {
+            void handleMutationCompleted();
+          }}
+        />
+      ) : null}
       {transactions.length === 0 ? (
         <p className="text-center text-muted-foreground py-12">
           No transactions found for this category in this period.
@@ -115,15 +169,15 @@ export function CategoryTransactionsContent({
         transactions.map((tx) => (
           <TransactionCard
             key={tx.id}
-            sheetId={sheetId}
             tx={{
               ...tx,
               categoryName,
               categoryIcon,
             }}
-            returnTo={returnTo}
             currency={currency}
             canEditTransaction={canEditTransaction}
+            onEditIntentAction={() => prefetchEditTransactionForm(tx.id)}
+            onEditAction={() => setEditingTransactionId(tx.id)}
           />
         ))
       )}

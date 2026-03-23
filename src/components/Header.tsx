@@ -12,7 +12,7 @@ interface HeaderProps {
   actions?: ReactNode;
 }
 
-export async function Header({
+export function Header({
   title,
   backHref,
   icon: Icon,

@@ -1,7 +1,7 @@
 import { requireSheetPermission } from "@/lib/auth/sheets";
 import { ArrowLeft } from "lucide-react";
 import { Header } from "@/components/Header";
-import { CategoryFormLoader } from "../../category-form-loader";
+import { CategoryFormDialog } from "../../category-form-dialog";
 
 export default async function EditCategoryPage({
   params,
@@ -26,7 +26,7 @@ export default async function EditCategoryPage({
         subtitle={sheet.name}
       />
 
-      <CategoryFormLoader
+      <CategoryFormDialog
         sheetId={sheetId}
         categoryId={categoryId}
         returnType={selectedType}

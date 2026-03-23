@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { addCategory } from "./actions";
 import { updateCategory, deleteCategory } from "../[categoryId]/edit/actions";
@@ -27,11 +28,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { Info, LayoutGrid } from "lucide-react";
+import { Info } from "lucide-react";
 import { IconPicker } from "@/components/icon-picker";
 import type { FormErrors } from "@/lib/form-state";
+import { queryKeys } from "@/lib/query-keys";
 
 export const AVAILABLE_ICONS = [
   // Food & Drinks
@@ -113,6 +114,10 @@ type CategoryFormProps = {
   initialData?: CategoryFormData;
   initialType?: "income" | "expense";
   returnType?: "income" | "expense";
+  cancelHref?: string;
+  inPlace?: boolean;
+  onCompletedAction?: () => void;
+  onCancelAction?: () => void;
 };
 
 export default function CategoryForm({
@@ -121,8 +126,13 @@ export default function CategoryForm({
   initialData,
   initialType = "expense",
   returnType = initialData?.type ?? initialType,
+  cancelHref,
+  inPlace = false,
+  onCompletedAction,
+  onCancelAction,
 }: CategoryFormProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [selectedIcon, setSelectedIcon] = useState(initialData?.icon ?? "");
   const [dueReminderFrequency, setDueReminderFrequency] = useState<
     "none" | "specific_date" | "daily" | "weekly" | "monthly"
@@ -135,6 +145,20 @@ export default function CategoryForm({
 
   const formAction = mode === "edit" ? updateCategory : addCategory;
   const getFieldError = (field: string) => fieldErrors[field];
+  const effectiveCancelHref =
+    cancelHref ?? `/sheet/${sheetId}/settings/category?type=${returnType}`;
+
+  const invalidateQueries = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["sheet", sheetId, "categories"] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.recurring(sheetId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard(sheetId) }),
+      queryClient.invalidateQueries({
+        queryKey: ["sheet", sheetId, "transactions-overview"],
+      }),
+      queryClient.invalidateQueries({ queryKey: ["sheet", sheetId, "history"] }),
+    ]);
+  };
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -145,7 +169,14 @@ export default function CategoryForm({
     try {
       const result = await formAction(new FormData(event.currentTarget));
 
+      if (result.success && inPlace) {
+        await invalidateQueries();
+        onCompletedAction?.();
+        return;
+      }
+
       if (result.redirectTo) {
+        await invalidateQueries();
         router.push(result.redirectTo);
         return;
       }
@@ -168,7 +199,14 @@ export default function CategoryForm({
     try {
       const result = await deleteCategory(new FormData(event.currentTarget));
 
+      if (result.success && inPlace) {
+        await invalidateQueries();
+        onCompletedAction?.();
+        return;
+      }
+
       if (result.redirectTo) {
+        await invalidateQueries();
         router.push(result.redirectTo);
         return;
       }
@@ -183,17 +221,12 @@ export default function CategoryForm({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <LayoutGrid className="h-4 w-4" /> Category Details
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} className="space-y-4">
+    <div>
+      <form onSubmit={onSubmit} className="space-y-4">
           <input type="hidden" name="sheetId" value={sheetId} />
           <input type="hidden" name="icon" value={selectedIcon} />
           <input type="hidden" name="returnType" value={returnType} />
+          <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
           {mode === "edit" && initialData && (
             <input type="hidden" name="categoryId" value={initialData.id} />
           )}
@@ -211,7 +244,18 @@ export default function CategoryForm({
               name="name"
               placeholder="e.g. Food & Drinks"
               defaultValue={initialData?.name ?? ""}
-              required
+              onFocus={(event) => {
+                const input = event.currentTarget;
+                if (
+                  input.selectionStart === 0 &&
+                  input.selectionEnd === input.value.length
+                ) {
+                  window.requestAnimationFrame(() => {
+                    const length = input.value.length;
+                    input.setSelectionRange(length, length);
+                  });
+                }
+              }}
               aria-invalid={Boolean(getFieldError("name"))}
             />
             {getFieldError("name") ? (
@@ -230,12 +274,8 @@ export default function CategoryForm({
               maxRows={5}
             />
             {getFieldError("icon") ? (
-              <p className="text-[10px] text-destructive font-medium">
+              <p className="text-xs font-medium text-destructive">
                 {getFieldError("icon")}
-              </p>
-            ) : !selectedIcon ? (
-              <p className="text-[10px] text-destructive font-medium">
-                Please select an icon for the category.
               </p>
             ) : null}
           </div>
@@ -343,69 +383,77 @@ export default function CategoryForm({
             </p>
           </div>
 
-          <div className="pt-4 space-y-4">
+          <div className="pt-2 space-y-4">
             <SubmitButton
-              disabled={!selectedIcon}
               loading={loading}
               mode={mode}
             />
-            <Button variant="outline" className="w-full" asChild>
-              <Link href={`/sheet/${sheetId}/settings/category?type=${returnType}`}>
+            {inPlace ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={onCancelAction}
+              >
                 Cancel
-              </Link>
-            </Button>
+              </Button>
+            ) : (
+              <Button variant="outline" className="w-full" asChild>
+                <Link href={effectiveCancelHref}>Cancel</Link>
+              </Button>
+            )}
           </div>
-        </form>
+      </form>
 
-        {mode === "edit" && initialData && (
-          <div className="mt-8 pt-8 border-t">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="w-full">
-                  Delete Category
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete
-                    the category and all associated data.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                {deleteError ? (
-                  <p className="text-sm font-medium text-destructive">
-                    {deleteError}
-                  </p>
-                ) : null}
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <form onSubmit={onDelete} className="mt-2 sm:mt-0">
-                    <input type="hidden" name="sheetId" value={sheetId} />
-                    <input
-                      type="hidden"
-                      name="categoryId"
-                      value={initialData.id}
-                    />
-                    <input type="hidden" name="returnType" value={returnType} />
-                    <DeleteButton loading={deleteLoading} />
-                  </form>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {mode === "edit" && initialData && (
+        <div className="mt-8 pt-8 border-t">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="w-full">
+                Delete Category
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete
+                  the category and all associated data.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              {deleteError ? (
+                <p className="text-sm font-medium text-destructive">
+                  {deleteError}
+                </p>
+              ) : null}
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <form onSubmit={onDelete} className="mt-2 sm:mt-0">
+                  <input type="hidden" name="sheetId" value={sheetId} />
+                  <input
+                    type="hidden"
+                    name="categoryId"
+                    value={initialData.id}
+                  />
+                  <input type="hidden" name="returnType" value={returnType} />
+                  <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
+                  <DeleteButton loading={deleteLoading} />
+                </form>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
+    </div>
   );
 }
 
 function SubmitButton({
-  disabled,
+  disabled = false,
   loading = false,
   mode,
 }: {
-  disabled: boolean;
+  disabled?: boolean;
   loading?: boolean;
   mode: "add" | "edit";
 }) {

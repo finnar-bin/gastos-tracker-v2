@@ -9,6 +9,7 @@ import { queryKeys } from "@/lib/query-keys";
 import { fetchSheetCurrency } from "@/lib/sheet-currency";
 import { createClient } from "@/lib/supabase/client";
 import { fetchTransactionOverview } from "@/lib/transaction-overview";
+import { fetchTransactionFormData } from "@/lib/transaction-form-data";
 import { usePrefetchGuard } from "@/components/use-prefetch-guard";
 
 type NavigationTarget = "dashboard" | "history" | "transactions" | "settings";
@@ -27,7 +28,6 @@ export function useSheetNavigationPrefetch(sheetId: string) {
     history: `/sheet/${sheetId}/history`,
     transactions: `/sheet/${sheetId}/transactions`,
     settings: `/sheet/${sheetId}/settings`,
-    addTransaction: `/sheet/${sheetId}/transactions/add`,
     sheetSelector: "/sheet",
   } as const;
 
@@ -114,6 +114,17 @@ export function useSheetNavigationPrefetch(sheetId: string) {
       }),
     ]);
 
+  const prefetchAddTransactionFormQueries = () =>
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.transactionForm(sheetId, "add", "new", "expense"),
+      queryFn: () =>
+        fetchTransactionFormData({
+          supabase,
+          sheetId,
+          mode: "add",
+        }),
+    });
+
   const prefetchNavigationTarget = (target: NavigationTarget) => {
     switch (target) {
       case "dashboard":
@@ -150,6 +161,14 @@ export function useSheetNavigationPrefetch(sheetId: string) {
     }
 
     prefetchNavigationTarget(target);
+  };
+
+  const prefetchAddTransactionFormForIntent = () => {
+    if (!shouldPrefetch("form:add-transaction")) {
+      return;
+    }
+
+    void prefetchAddTransactionFormQueries();
   };
 
   useEffect(() => {
@@ -194,5 +213,6 @@ export function useSheetNavigationPrefetch(sheetId: string) {
     prefetchNavigationTarget,
     prefetchRouteForTouch,
     prefetchNavigationTargetForTouch,
+    prefetchAddTransactionFormForIntent,
   };
 }
