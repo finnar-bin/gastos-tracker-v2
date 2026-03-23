@@ -203,10 +203,7 @@ export function CategoryList({
           <CategoryFormDialog
             sheetId={sheetId}
             mode="add"
-            returnType={selectedType}
             initialType={selectedType}
-            inPlace
-            asDialog
             open={true}
             onOpenChangeAction={setAddDialogOpen}
             onCancelAction={() => setAddDialogOpen(false)}
@@ -249,10 +246,7 @@ export function CategoryList({
         <CategoryFormDialog
           sheetId={sheetId}
           mode="add"
-          returnType={selectedType}
           initialType={selectedType}
-          inPlace
-          asDialog
           open={true}
           onOpenChangeAction={setAddDialogOpen}
           onCancelAction={() => setAddDialogOpen(false)}
@@ -264,9 +258,6 @@ export function CategoryList({
           sheetId={sheetId}
           mode="edit"
           categoryId={editingCategoryId}
-          returnType={selectedType}
-          inPlace
-          asDialog
           open={true}
           onOpenChangeAction={(open) => {
             if (!open) {

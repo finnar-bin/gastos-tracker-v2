@@ -133,9 +133,6 @@ export function BottomBar({ sheetId, role }: BottomBarProps) {
           sheetId={sheetId}
           mode="add"
           transactionType="expense"
-          cancelHref={pathname}
-          inPlace
-          asDialog
           open={addDialogOpen}
           onOpenChangeAction={setAddDialogOpen}
           onCancelAction={() => setAddDialogOpen(false)}

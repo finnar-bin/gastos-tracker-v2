@@ -29,8 +29,6 @@ export async function addCategory(
     ? (formData.get("dueDate") as string)
     : null;
   const dueReminderFrequencyValue = formData.get("dueReminderFrequency");
-  const returnType = formData.get("returnType") as string | null;
-  const inPlace = formData.get("inPlace") === "1";
   const dueReminderFrequency =
     typeof dueReminderFrequencyValue === "string" &&
     dueReminderFrequencyValue !== "none"
@@ -97,13 +95,5 @@ export async function addCategory(
     return { error: "Failed to save category. Please review the form and try again." };
   }
 
-  if (inPlace) {
-    return { success: "Category created." };
-  }
-
-  return {
-    redirectTo: `/sheet/${sheetId}/settings/category?type=${
-      returnType === "income" ? "income" : type
-    }`,
-  };
+  return { success: "Category created." };
 }

@@ -68,8 +68,6 @@ export default function RecurringTransactionForm({
   paymentTypes,
   mode = "add",
   initialData,
-  cancelHref,
-  inPlace = false,
   onCompletedAction,
   onCancelAction,
 }: {
@@ -78,8 +76,6 @@ export default function RecurringTransactionForm({
   paymentTypes: PaymentType[];
   mode?: "add" | "edit";
   initialData?: RecurringTransactionData;
-  cancelHref?: string;
-  inPlace?: boolean;
   onCompletedAction?: () => void;
   onCancelAction?: () => void;
 }) {
@@ -111,7 +107,6 @@ export default function RecurringTransactionForm({
   const formAction =
     mode === "edit" ? updateRecurringTransaction : addRecurringTransaction;
   const getFieldError = (field: string) => fieldErrors[field];
-  const effectiveCancelHref = cancelHref ?? `/sheet/${sheetId}/settings/recurring`;
 
   const filteredCategories = categories.filter(
     (category) => category.type === transactionType,
@@ -154,7 +149,7 @@ export default function RecurringTransactionForm({
     try {
       const result = await formAction(new FormData(event.currentTarget));
 
-      if (result.success && inPlace) {
+      if (result.success) {
         await invalidateQueries();
         onCompletedAction?.();
         return;
@@ -188,7 +183,7 @@ export default function RecurringTransactionForm({
         new FormData(event.currentTarget),
       );
 
-      if (result.success && inPlace) {
+      if (result.success) {
         await invalidateQueries();
         onCompletedAction?.();
         return;
@@ -225,7 +220,7 @@ export default function RecurringTransactionForm({
                 Create Category
               </Link>
             </Button>
-            {inPlace ? (
+            {onCancelAction ? (
               <Button
                 type="button"
                 variant="outline"
@@ -234,16 +229,11 @@ export default function RecurringTransactionForm({
               >
                 Back
               </Button>
-            ) : (
-              <Button variant="outline" asChild className="w-full">
-                <Link href={effectiveCancelHref}>Back</Link>
-              </Button>
-            )}
+            ) : null}
         </div>
       ) : (
         <form onSubmit={onSubmit} className="space-y-4">
             <input type="hidden" name="sheetId" value={sheetId} />
-            <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
             {mode === "edit" && initialData && (
               <input type="hidden" name="recurringId" value={initialData.id} />
             )}
@@ -414,7 +404,7 @@ export default function RecurringTransactionForm({
 
             <div className="pt-2 space-y-4">
               <SubmitButton disabled={isInvalidDay} loading={loading} mode={mode} />
-              {inPlace ? (
+              {onCancelAction ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -423,11 +413,7 @@ export default function RecurringTransactionForm({
                 >
                   Cancel
                 </Button>
-              ) : (
-                <Button variant="outline" className="w-full" asChild>
-                  <Link href={effectiveCancelHref}>Cancel</Link>
-                </Button>
-              )}
+              ) : null}
             </div>
         </form>
       )}
@@ -462,7 +448,6 @@ export default function RecurringTransactionForm({
                     name="recurringId"
                     value={initialData.id}
                   />
-                  <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
                   <DeleteButton loading={deleteLoading} />
                 </form>
               </AlertDialogFooter>

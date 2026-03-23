@@ -28,7 +28,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import Link from "next/link";
 import { Info } from "lucide-react";
 import { IconPicker } from "@/components/icon-picker";
 import type { FormErrors } from "@/lib/form-state";
@@ -113,9 +112,6 @@ type CategoryFormProps = {
   mode?: "add" | "edit";
   initialData?: CategoryFormData;
   initialType?: "income" | "expense";
-  returnType?: "income" | "expense";
-  cancelHref?: string;
-  inPlace?: boolean;
   onCompletedAction?: () => void;
   onCancelAction?: () => void;
 };
@@ -125,9 +121,6 @@ export default function CategoryForm({
   mode = "add",
   initialData,
   initialType = "expense",
-  returnType = initialData?.type ?? initialType,
-  cancelHref,
-  inPlace = false,
   onCompletedAction,
   onCancelAction,
 }: CategoryFormProps) {
@@ -145,8 +138,6 @@ export default function CategoryForm({
 
   const formAction = mode === "edit" ? updateCategory : addCategory;
   const getFieldError = (field: string) => fieldErrors[field];
-  const effectiveCancelHref =
-    cancelHref ?? `/sheet/${sheetId}/settings/category?type=${returnType}`;
 
   const invalidateQueries = async () => {
     await Promise.all([
@@ -169,7 +160,7 @@ export default function CategoryForm({
     try {
       const result = await formAction(new FormData(event.currentTarget));
 
-      if (result.success && inPlace) {
+      if (result.success) {
         await invalidateQueries();
         onCompletedAction?.();
         return;
@@ -199,7 +190,7 @@ export default function CategoryForm({
     try {
       const result = await deleteCategory(new FormData(event.currentTarget));
 
-      if (result.success && inPlace) {
+      if (result.success) {
         await invalidateQueries();
         onCompletedAction?.();
         return;
@@ -225,8 +216,6 @@ export default function CategoryForm({
       <form onSubmit={onSubmit} className="space-y-4">
           <input type="hidden" name="sheetId" value={sheetId} />
           <input type="hidden" name="icon" value={selectedIcon} />
-          <input type="hidden" name="returnType" value={returnType} />
-          <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
           {mode === "edit" && initialData && (
             <input type="hidden" name="categoryId" value={initialData.id} />
           )}
@@ -244,9 +233,9 @@ export default function CategoryForm({
               name="name"
               placeholder="e.g. Food & Drinks"
               defaultValue={initialData?.name ?? ""}
-              onFocus={(event) => {
-                const input = event.currentTarget;
-                if (
+                onFocus={(event) => {
+                  const input = event.currentTarget;
+                  if (
                   input.selectionStart === 0 &&
                   input.selectionEnd === input.value.length
                 ) {
@@ -388,7 +377,7 @@ export default function CategoryForm({
               loading={loading}
               mode={mode}
             />
-            {inPlace ? (
+            {onCancelAction ? (
               <Button
                 type="button"
                 variant="outline"
@@ -397,11 +386,7 @@ export default function CategoryForm({
               >
                 Cancel
               </Button>
-            ) : (
-              <Button variant="outline" className="w-full" asChild>
-                <Link href={effectiveCancelHref}>Cancel</Link>
-              </Button>
-            )}
+            ) : null}
           </div>
       </form>
 
@@ -435,8 +420,6 @@ export default function CategoryForm({
                     name="categoryId"
                     value={initialData.id}
                   />
-                  <input type="hidden" name="returnType" value={returnType} />
-                  <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
                   <DeleteButton loading={deleteLoading} />
                 </form>
               </AlertDialogFooter>

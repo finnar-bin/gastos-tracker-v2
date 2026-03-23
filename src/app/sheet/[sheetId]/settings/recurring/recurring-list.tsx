@@ -127,8 +127,6 @@ export function RecurringList({
           <RecurringFormDialog
             sheetId={sheetId}
             mode="add"
-            inPlace
-            asDialog
             open={true}
             onOpenChangeAction={setAddDialogOpen}
             onCancelAction={() => setAddDialogOpen(false)}
@@ -159,8 +157,6 @@ export function RecurringList({
         <RecurringFormDialog
           sheetId={sheetId}
           mode="add"
-          inPlace
-          asDialog
           open={true}
           onOpenChangeAction={setAddDialogOpen}
           onCancelAction={() => setAddDialogOpen(false)}
@@ -172,8 +168,6 @@ export function RecurringList({
           sheetId={sheetId}
           mode="edit"
           recurringId={editingRecurringId}
-          inPlace
-          asDialog
           open={true}
           onOpenChangeAction={(open) => {
             if (!open) {

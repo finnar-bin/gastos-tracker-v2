@@ -83,9 +83,6 @@ export function DesktopNav({ sheetId, role }: DesktopNavProps) {
               sheetId={sheetId}
               mode="add"
               transactionType="expense"
-              cancelHref={pathname}
-              inPlace
-              asDialog
               open={addDialogOpen}
               onOpenChangeAction={setAddDialogOpen}
               onCancelAction={() => setAddDialogOpen(false)}

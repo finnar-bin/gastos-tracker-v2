@@ -7,19 +7,6 @@ import { requireSheetPermission } from "@/lib/auth/sheets";
 import type { FormActionResult } from "@/lib/form-state";
 import { parseAndValidateAmount } from "@/lib/validation/amount";
 
-function getSafeReturnTo(sheetId: string, returnTo?: string | null) {
-  if (!returnTo) {
-    return `/sheet/${sheetId}`;
-  }
-
-  const normalized = returnTo.startsWith("/") ? returnTo : `/${returnTo}`;
-  if (normalized.startsWith(`/sheet/${sheetId}`)) {
-    return normalized;
-  }
-
-  return `/sheet/${sheetId}`;
-}
-
 export async function addTransaction(formData: FormData): Promise<FormActionResult> {
   const supabase = await createClient();
   const {
@@ -41,8 +28,6 @@ export async function addTransaction(formData: FormData): Promise<FormActionResu
       : null;
   const dateStr = formData.get("date") as string;
   const date = dateStr || new Date().toISOString().split("T")[0];
-  const returnTo = formData.get("returnTo") as string | null;
-  const inPlace = formData.get("inPlace") === "1";
 
   const fieldErrors: FormActionResult["fieldErrors"] = {};
 
@@ -86,9 +71,5 @@ export async function addTransaction(formData: FormData): Promise<FormActionResu
     return { error: "Failed to save transaction. Please review the form and try again." };
   }
 
-  if (inPlace) {
-    return { success: "Transaction saved." };
-  }
-
-  return { redirectTo: getSafeReturnTo(sheetId, returnTo) };
+  return { success: "Transaction saved." };
 }

@@ -71,13 +71,6 @@ export function CategoryTransactionsContent({
     queryFn: () => fetchSheetCurrency(sheetId),
   });
 
-  const backParams = new URLSearchParams({
-    month: selectedMonth.toString(),
-    year: selectedYear.toString(),
-    type: selectedType,
-  });
-  const historyReturnTo = `/sheet/${sheetId}/history?${backParams.toString()}&categoryId=${categoryId}&type=${selectedType}`;
-
   if (categoryTransactionsQuery.isLoading && !categoryTransactionsQuery.data) {
     return (
       <div className="space-y-3">
@@ -146,9 +139,6 @@ export function CategoryTransactionsContent({
           sheetId={sheetId}
           mode="edit"
           transactionId={editingTransactionId}
-          cancelHref={historyReturnTo}
-          inPlace
-          asDialog
           open={true}
           onOpenChangeAction={(open) => {
             if (!open) {

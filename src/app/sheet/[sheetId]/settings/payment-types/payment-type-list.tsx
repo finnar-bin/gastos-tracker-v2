@@ -121,8 +121,6 @@ export function PaymentTypeList({
           <PaymentTypeFormDialog
             sheetId={sheetId}
             mode="add"
-            inPlace
-            asDialog
             open={true}
             onOpenChangeAction={setAddDialogOpen}
             onCancelAction={() => setAddDialogOpen(false)}
@@ -153,8 +151,6 @@ export function PaymentTypeList({
         <PaymentTypeFormDialog
           sheetId={sheetId}
           mode="add"
-          inPlace
-          asDialog
           open={true}
           onOpenChangeAction={setAddDialogOpen}
           onCancelAction={() => setAddDialogOpen(false)}
@@ -166,8 +162,6 @@ export function PaymentTypeList({
           sheetId={sheetId}
           mode="edit"
           paymentTypeId={editingPaymentTypeId}
-          inPlace
-          asDialog
           open={true}
           onOpenChangeAction={(open) => {
             if (!open) {

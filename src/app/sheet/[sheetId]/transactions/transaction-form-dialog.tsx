@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import {
@@ -17,28 +17,111 @@ import TransactionForm, { type TransactionData } from "./add/form";
 
 const supabase = createClient();
 
+type TransactionFormQueryData = Awaited<ReturnType<typeof fetchTransactionFormData>>;
+
+type TransactionFormDialogBodyProps = {
+  sheetId: string;
+  mode: "add" | "edit";
+  transactionType?: "income" | "expense";
+  query: UseQueryResult<TransactionFormQueryData>;
+  onCompletedAction?: () => void;
+  onCancelAction?: () => void;
+  onTypeChangeAction: (nextType: "income" | "expense") => void;
+};
+
+function TransactionFormDialogBody({
+  sheetId,
+  mode,
+  transactionType,
+  query,
+  onCompletedAction,
+  onCancelAction,
+  onTypeChangeAction,
+}: TransactionFormDialogBodyProps) {
+  if (query.isLoading) {
+    return <div className="h-96 rounded-xl bg-muted/40 animate-pulse" />;
+  }
+
+  if (query.error) {
+    return (
+      <div className="rounded-xl border border-dashed p-6 text-center">
+        <p className="text-sm text-muted-foreground">
+          Failed to load transaction form.
+        </p>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => void query.refetch()}
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  const categories = query.data?.categories ?? [];
+  const paymentTypes = query.data?.paymentTypes ?? [];
+  const transaction = query.data?.transaction ?? null;
+  const resolvedType = transaction?.type ?? transactionType ?? "expense";
+  const normalizedCategories = categories.map((category) => ({
+    id: category.id,
+    name: category.name,
+    icon: category.icon,
+    type: category.type,
+    defaultAmount: category.default_amount,
+  }));
+
+  const initialData: TransactionData | undefined = transaction
+    ? {
+        id: transaction.id,
+        amount: transaction.amount,
+        type: transaction.type,
+        description: transaction.description,
+        date: transaction.date,
+        categoryId: transaction.category_id,
+        paymentType: transaction.payment_type_id,
+      }
+    : undefined;
+
+  if (mode === "edit" && !transaction) {
+    return (
+      <div className="rounded-xl border border-dashed p-6 text-center">
+        <p className="text-sm text-muted-foreground">Transaction not found.</p>
+      </div>
+    );
+  }
+
+  return (
+    <TransactionForm
+      sheetId={sheetId}
+      categories={normalizedCategories}
+      paymentTypes={paymentTypes}
+      transactionType={resolvedType}
+      mode={mode}
+      initialData={initialData}
+      onCompletedAction={onCompletedAction}
+      onCancelAction={onCancelAction}
+      onTypeChangeAction={onTypeChangeAction}
+    />
+  );
+}
+
 export function TransactionFormDialog({
   sheetId,
-  cancelHref,
   mode = "add",
   transactionId,
   transactionType,
-  inPlace = false,
   onCompletedAction,
   onCancelAction,
-  asDialog = false,
   open = false,
   onOpenChangeAction,
 }: {
   sheetId: string;
-  cancelHref: string;
   mode?: "add" | "edit";
   transactionId?: string;
   transactionType?: "income" | "expense";
-  inPlace?: boolean;
   onCompletedAction?: () => void;
   onCancelAction?: () => void;
-  asDialog?: boolean;
   open?: boolean;
   onOpenChangeAction?: (open: boolean) => void;
 }) {
@@ -52,7 +135,7 @@ export function TransactionFormDialog({
       transactionId ?? "new",
       transactionType ?? "unknown",
     ),
-    enabled: asDialog ? open : true,
+    enabled: open,
     queryFn: () =>
       fetchTransactionFormData({
         supabase,
@@ -61,81 +144,6 @@ export function TransactionFormDialog({
         transactionId,
       }),
   });
-
-  const content = (() => {
-    if (transactionFormQuery.isLoading) {
-      return <div className="h-96 rounded-xl bg-muted/40 animate-pulse" />;
-    }
-
-    if (transactionFormQuery.error) {
-      return (
-        <div className="rounded-xl border border-dashed p-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            Failed to load transaction form.
-          </p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => void transactionFormQuery.refetch()}
-          >
-            Retry
-          </Button>
-        </div>
-      );
-    }
-
-    const categories = transactionFormQuery.data?.categories ?? [];
-    const paymentTypes = transactionFormQuery.data?.paymentTypes ?? [];
-    const transaction = transactionFormQuery.data?.transaction ?? null;
-    const resolvedType = transaction?.type ?? transactionType ?? "expense";
-    const normalizedCategories = categories.map((category) => ({
-      id: category.id,
-      name: category.name,
-      icon: category.icon,
-      type: category.type,
-      defaultAmount: category.default_amount,
-    }));
-
-    const initialData: TransactionData | undefined = transaction
-      ? {
-          id: transaction.id,
-          amount: transaction.amount,
-          type: transaction.type,
-          description: transaction.description,
-          date: transaction.date,
-          categoryId: transaction.category_id,
-          paymentType: transaction.payment_type_id,
-        }
-      : undefined;
-
-    if (mode === "edit" && !transaction) {
-      return (
-        <div className="rounded-xl border border-dashed p-6 text-center">
-          <p className="text-sm text-muted-foreground">Transaction not found.</p>
-        </div>
-      );
-    }
-
-    return (
-      <TransactionForm
-        sheetId={sheetId}
-        categories={normalizedCategories}
-        paymentTypes={paymentTypes}
-        transactionType={resolvedType}
-        mode={mode}
-        initialData={initialData}
-        cancelHref={cancelHref}
-        inPlace={inPlace}
-        onCompletedAction={onCompletedAction}
-        onCancelAction={onCancelAction}
-        onTypeChangeAction={setDialogType}
-      />
-    );
-  })();
-
-  if (!asDialog) {
-    return content;
-  }
 
   if (!open) {
     return null;
@@ -167,7 +175,15 @@ export function TransactionFormDialog({
             {titleLabel}
           </DialogTitle>
         </DialogHeader>
-        {content}
+        <TransactionFormDialogBody
+          sheetId={sheetId}
+          mode={mode}
+          transactionType={transactionType}
+          query={transactionFormQuery}
+          onCompletedAction={onCompletedAction}
+          onCancelAction={onCancelAction}
+          onTypeChangeAction={setDialogType}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -21,7 +21,6 @@ export async function addPaymentType(
   const sheetId = formData.get("sheetId") as string;
   const name = (formData.get("name") as string)?.trim();
   const icon = (formData.get("icon") as string)?.trim();
-  const inPlace = formData.get("inPlace") === "1";
 
   const fieldErrors: FormActionResult["fieldErrors"] = {};
   if (!sheetId) fieldErrors.sheetId = "Invalid sheet.";
@@ -45,9 +44,5 @@ export async function addPaymentType(
     return { error: "Failed to save payment type. Please review the form and try again." };
   }
 
-  if (inPlace) {
-    return { success: "Payment type created." };
-  }
-
-  return { redirectTo: `/sheet/${sheetId}/settings/payment-types` };
+  return { success: "Payment type created." };
 }

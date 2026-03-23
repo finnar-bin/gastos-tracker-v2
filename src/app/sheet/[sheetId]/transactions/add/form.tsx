@@ -63,8 +63,6 @@ export default function TransactionForm({
   transactionType,
   mode = "add",
   initialData,
-  cancelHref,
-  inPlace = false,
   onCompletedAction,
   onCancelAction,
   onTypeChangeAction,
@@ -75,8 +73,6 @@ export default function TransactionForm({
   transactionType?: "income" | "expense";
   mode?: "add" | "edit";
   initialData?: TransactionData;
-  cancelHref: string;
-  inPlace?: boolean;
   onCompletedAction?: () => void;
   onCancelAction?: () => void;
   onTypeChangeAction?: (nextType: "income" | "expense") => void;
@@ -146,7 +142,7 @@ export default function TransactionForm({
     try {
       const result = await formAction(new FormData(event.currentTarget));
 
-      if (result.success && inPlace) {
+      if (result.success) {
         await invalidateTransactionQueries();
         onCompletedAction?.();
         return;
@@ -176,7 +172,7 @@ export default function TransactionForm({
     try {
       const result = await deleteTransaction(new FormData(event.currentTarget));
 
-      if (result.success && inPlace) {
+      if (result.success) {
         await invalidateTransactionQueries();
         onCompletedAction?.();
         return;
@@ -210,18 +206,23 @@ export default function TransactionForm({
                 Create Category
               </Link>
             </Button>
-            <div className="pt-2 space-y-2">
-              <Button variant="outline" className="w-full" asChild>
-                <Link href={cancelHref}>Cancel</Link>
-              </Button>
-            </div>
+            {onCancelAction ? (
+              <div className="pt-2 space-y-2">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  type="button"
+                  onClick={onCancelAction}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : null}
           </div>
       ) : (
         <form onSubmit={onSubmit} className="space-y-4">
             <input type="hidden" name="type" value={type} />
             <input type="hidden" name="sheetId" value={sheetId} />
-            <input type="hidden" name="returnTo" value={cancelHref} />
-            <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
             {mode === "edit" && initialData && (
               <input
                 type="hidden"
@@ -298,7 +299,6 @@ export default function TransactionForm({
                 placeholder="0.00"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
-                autoFocus={!inPlace}
                 aria-invalid={Boolean(getFieldError("amount"))}
               />
               {getFieldError("amount") ? (
@@ -367,7 +367,7 @@ export default function TransactionForm({
                 loading={loading}
                 trackFormStatus={false}
               />
-              {inPlace ? (
+              {onCancelAction ? (
                 <Button
                   variant="outline"
                   className="w-full"
@@ -376,11 +376,7 @@ export default function TransactionForm({
                 >
                   Cancel
                 </Button>
-              ) : (
-                <Button variant="outline" className="w-full" asChild>
-                  <Link href={cancelHref}>Cancel</Link>
-                </Button>
-              )}
+              ) : null}
             </div>
         </form>
       )}
@@ -409,8 +405,6 @@ export default function TransactionForm({
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <form onSubmit={onDelete} className="mt-2 sm:mt-0">
                   <input type="hidden" name="sheetId" value={sheetId} />
-                  <input type="hidden" name="returnTo" value={cancelHref} />
-                  <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
                   <input
                     type="hidden"
                     name="transactionId"

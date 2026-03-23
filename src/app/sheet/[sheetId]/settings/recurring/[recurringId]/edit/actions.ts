@@ -32,7 +32,6 @@ export async function updateRecurringTransaction(
         ? paymentTypeValue
         : null;
   const description = formData.get("description") as string;
-  const inPlace = formData.get("inPlace") === "1";
   const frequency = formData.get("frequency") as
     | "daily"
     | "weekly"
@@ -151,11 +150,7 @@ export async function updateRecurringTransaction(
     };
   }
 
-  if (inPlace) {
-    return { success: "Recurring schedule updated." };
-  }
-
-  return { redirectTo: `/sheet/${sheetId}/settings/recurring` };
+  return { success: "Recurring schedule updated." };
 }
 
 export async function deleteRecurringTransaction(
@@ -172,7 +167,6 @@ export async function deleteRecurringTransaction(
 
   const recurringId = formData.get("recurringId") as string;
   const sheetId = formData.get("sheetId") as string;
-  const inPlace = formData.get("inPlace") === "1";
   const fieldErrors: FormActionResult["fieldErrors"] = {};
 
   if (!recurringId) fieldErrors.recurringId = "Invalid recurring schedule.";
@@ -202,9 +196,5 @@ export async function deleteRecurringTransaction(
     return { error: "Failed to delete recurring schedule. Please try again." };
   }
 
-  if (inPlace) {
-    return { success: "Recurring schedule deleted." };
-  }
-
-  return { redirectTo: `/sheet/${sheetId}/settings/recurring` };
+  return { success: "Recurring schedule deleted." };
 }

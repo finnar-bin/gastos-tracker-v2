@@ -30,7 +30,6 @@ export async function addRecurringTransaction(
         ? paymentTypeValue
         : null;
   const description = formData.get("description") as string;
-  const inPlace = formData.get("inPlace") === "1";
   const frequency = formData.get("frequency") as
     | "daily"
     | "weekly"
@@ -126,9 +125,5 @@ export async function addRecurringTransaction(
     };
   }
 
-  if (inPlace) {
-    return { success: "Recurring schedule created." };
-  }
-
-  return { redirectTo: `/sheet/${sheetId}/settings/recurring` };
+  return { success: "Recurring schedule created." };
 }

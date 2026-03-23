@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { addPaymentType } from "./actions";
 import {
   deletePaymentType,
@@ -56,16 +55,12 @@ export default function PaymentTypeForm({
   sheetId,
   mode = "add",
   initialData,
-  cancelHref,
-  inPlace = false,
   onCompletedAction,
   onCancelAction,
 }: {
   sheetId: string;
   mode?: "add" | "edit";
   initialData?: PaymentTypeFormData;
-  cancelHref?: string;
-  inPlace?: boolean;
   onCompletedAction?: () => void;
   onCancelAction?: () => void;
 }) {
@@ -79,7 +74,6 @@ export default function PaymentTypeForm({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const formAction = mode === "edit" ? updatePaymentType : addPaymentType;
   const getFieldError = (field: string) => fieldErrors[field];
-  const effectiveCancelHref = cancelHref ?? `/sheet/${sheetId}/settings/payment-types`;
 
   const invalidateQueries = async () => {
     await Promise.all([
@@ -102,7 +96,7 @@ export default function PaymentTypeForm({
     try {
       const result = await formAction(new FormData(event.currentTarget));
 
-      if (result.success && inPlace) {
+      if (result.success) {
         await invalidateQueries();
         onCompletedAction?.();
         return;
@@ -132,7 +126,7 @@ export default function PaymentTypeForm({
     try {
       const result = await deletePaymentType(new FormData(event.currentTarget));
 
-      if (result.success && inPlace) {
+      if (result.success) {
         await invalidateQueries();
         onCompletedAction?.();
         return;
@@ -158,7 +152,6 @@ export default function PaymentTypeForm({
       <form onSubmit={onSubmit} className="space-y-4">
           <input type="hidden" name="sheetId" value={sheetId} />
           <input type="hidden" name="icon" value={selectedIcon} />
-          <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
           {mode === "edit" && initialData ? (
             <input type="hidden" name="paymentTypeId" value={initialData.id} />
           ) : null}
@@ -202,7 +195,7 @@ export default function PaymentTypeForm({
 
           <div className="pt-2 space-y-4">
             <SubmitButton loading={loading} mode={mode} />
-            {inPlace ? (
+            {onCancelAction ? (
               <Button
                 type="button"
                 variant="outline"
@@ -211,11 +204,7 @@ export default function PaymentTypeForm({
               >
                 Cancel
               </Button>
-            ) : (
-              <Button variant="outline" className="w-full" asChild>
-                <Link href={effectiveCancelHref}>Cancel</Link>
-              </Button>
-            )}
+            ) : null}
           </div>
       </form>
 
@@ -249,7 +238,6 @@ export default function PaymentTypeForm({
                     name="paymentTypeId"
                     value={initialData.id}
                   />
-                  <input type="hidden" name="inPlace" value={inPlace ? "1" : "0"} />
                   <DeleteButton loading={deleteLoading} />
                 </form>
               </AlertDialogFooter>

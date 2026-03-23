@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -29,15 +29,19 @@ export function SettingsLinks({ sheetId }: { sheetId: string }) {
   const queryClient = useQueryClient();
   const { shouldPrefetch } = usePrefetchGuard();
 
-  const routes = {
-    general: `/sheet/${sheetId}/settings/general`,
-    category: `/sheet/${sheetId}/settings/category`,
-    recurring: `/sheet/${sheetId}/settings/recurring`,
-    paymentTypes: `/sheet/${sheetId}/settings/payment-types`,
-    users: `/sheet/${sheetId}/settings/users`,
-  } as const;
+  const routes = useMemo(
+    () =>
+      ({
+        general: `/sheet/${sheetId}/settings/general`,
+        category: `/sheet/${sheetId}/settings/category`,
+        recurring: `/sheet/${sheetId}/settings/recurring`,
+        paymentTypes: `/sheet/${sheetId}/settings/payment-types`,
+        users: `/sheet/${sheetId}/settings/users`,
+      }) as const,
+    [sheetId],
+  );
 
-  const prefetchRouteAndQueries = (route: keyof typeof routes) => {
+  const prefetchRouteAndQueries = useCallback((route: keyof typeof routes) => {
     const href = routes[route];
     void router.prefetch(href);
     void queryClient.prefetchQuery({
@@ -121,15 +125,15 @@ export function SettingsLinks({ sheetId }: { sheetId: string }) {
 
     // Next.js route prefetch happens via Link, this keeps query cache warm.
     return href;
-  };
+  }, [queryClient, router, routes, sheetId]);
 
-  const prefetchRouteAndQueriesForTouch = (route: keyof typeof routes) => {
+  const prefetchRouteAndQueriesForTouch = useCallback((route: keyof typeof routes) => {
     if (!shouldPrefetch(`settings:${route}`)) {
       return;
     }
 
     prefetchRouteAndQueries(route);
-  };
+  }, [prefetchRouteAndQueries, shouldPrefetch]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -142,7 +146,7 @@ export function SettingsLinks({ sheetId }: { sheetId: string }) {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [sheetId]);
+  }, [prefetchRouteAndQueries]);
 
   return (
     <div className="flex flex-col space-y-3">

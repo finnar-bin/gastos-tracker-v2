@@ -140,9 +140,6 @@ export function HistoryContent({
           sheetId={sheetId}
           mode="edit"
           transactionId={editingTransactionId}
-          cancelHref={returnTo}
-          inPlace
-          asDialog
           open={true}
           onOpenChangeAction={(open) => {
             if (!open) {

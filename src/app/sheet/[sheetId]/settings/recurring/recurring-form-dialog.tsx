@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Repeat } from "lucide-react";
 import {
@@ -43,12 +42,94 @@ type RecurringRow = {
 
 const supabase = createClient();
 
+type RecurringFormQueryData = {
+  categories: CategoryRow[];
+  paymentTypes: PaymentTypeRow[];
+  recurring: RecurringRow | null;
+};
+
+type RecurringFormDialogBodyProps = {
+  sheetId: string;
+  mode: "add" | "edit";
+  query: UseQueryResult<RecurringFormQueryData>;
+  onCancelAction?: () => void;
+  onCompletedAction?: () => void;
+};
+
+function RecurringFormDialogBody({
+  sheetId,
+  mode,
+  query,
+  onCancelAction,
+  onCompletedAction,
+}: RecurringFormDialogBodyProps) {
+  if (query.isLoading) {
+    return <div className="h-96 rounded-xl bg-muted/40 animate-pulse" />;
+  }
+
+  if (query.error) {
+    return (
+      <div className="rounded-xl border border-dashed p-6 text-center">
+        <p className="text-sm text-muted-foreground">Failed to load recurring form.</p>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => void query.refetch()}
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  const categories = (query.data?.categories ?? []).map((category) => ({
+    id: category.id,
+    name: category.name,
+    icon: category.icon,
+    type: category.type,
+    defaultAmount: category.default_amount,
+  }));
+  const paymentTypes = query.data?.paymentTypes ?? [];
+  const recurring = query.data?.recurring ?? null;
+
+  const initialData: RecurringTransactionData | undefined = recurring
+    ? {
+        id: recurring.id,
+        amount: recurring.amount,
+        type: recurring.type,
+        description: recurring.description,
+        frequency: recurring.frequency,
+        dayOfMonth: recurring.day_of_month,
+        categoryId: recurring.category_id,
+        paymentType: recurring.payment_type_id ?? "",
+      }
+    : undefined;
+
+  if (mode === "edit" && !recurring) {
+    return (
+      <div className="rounded-xl border border-dashed p-6 text-center">
+        <p className="text-sm text-muted-foreground">Recurring transaction not found.</p>
+      </div>
+    );
+  }
+
+  return (
+    <RecurringTransactionForm
+      sheetId={sheetId}
+      categories={categories}
+      paymentTypes={paymentTypes}
+      mode={mode}
+      initialData={initialData}
+      onCancelAction={onCancelAction}
+      onCompletedAction={onCompletedAction}
+    />
+  );
+}
+
 export function RecurringFormDialog({
   sheetId,
   mode = "add",
   recurringId,
-  inPlace = false,
-  asDialog = false,
   open = false,
   onOpenChangeAction,
   onCancelAction,
@@ -57,8 +138,6 @@ export function RecurringFormDialog({
   sheetId: string;
   mode?: "add" | "edit";
   recurringId?: string;
-  inPlace?: boolean;
-  asDialog?: boolean;
   open?: boolean;
   onOpenChangeAction?: (open: boolean) => void;
   onCancelAction?: () => void;
@@ -67,7 +146,7 @@ export function RecurringFormDialog({
   const enabled = mode === "edit" ? Boolean(recurringId) : true;
   const recurringFormQuery = useQuery({
     queryKey: queryKeys.recurringForm(sheetId, mode, recurringId ?? "new"),
-    enabled: (asDialog ? open : true) && enabled,
+    enabled: open && enabled,
     queryFn: async () => {
       const [categoriesResult, paymentTypesResult, recurringResult] =
         await Promise.all([
@@ -101,85 +180,6 @@ export function RecurringFormDialog({
     },
   });
 
-  const content = useMemo(() => {
-    if (recurringFormQuery.isLoading) {
-      return <div className="h-96 rounded-xl bg-muted/40 animate-pulse" />;
-    }
-
-    if (recurringFormQuery.error) {
-      return (
-        <div className="rounded-xl border border-dashed p-6 text-center">
-          <p className="text-sm text-muted-foreground">Failed to load recurring form.</p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => void recurringFormQuery.refetch()}
-          >
-            Retry
-          </Button>
-        </div>
-      );
-    }
-
-    const categories = (recurringFormQuery.data?.categories ?? []).map((category) => ({
-      id: category.id,
-      name: category.name,
-      icon: category.icon,
-      type: category.type,
-      defaultAmount: category.default_amount,
-    }));
-    const paymentTypes = recurringFormQuery.data?.paymentTypes ?? [];
-    const recurring = recurringFormQuery.data?.recurring ?? null;
-
-    const initialData: RecurringTransactionData | undefined = recurring
-      ? {
-          id: recurring.id,
-          amount: recurring.amount,
-          type: recurring.type,
-          description: recurring.description,
-          frequency: recurring.frequency,
-          dayOfMonth: recurring.day_of_month,
-          categoryId: recurring.category_id,
-          paymentType: recurring.payment_type_id ?? "",
-        }
-      : undefined;
-
-    if (mode === "edit" && !recurring) {
-      return (
-        <div className="rounded-xl border border-dashed p-6 text-center">
-          <p className="text-sm text-muted-foreground">Recurring transaction not found.</p>
-        </div>
-      );
-    }
-
-    return (
-      <RecurringTransactionForm
-        sheetId={sheetId}
-        categories={categories}
-        paymentTypes={paymentTypes}
-        mode={mode}
-        initialData={initialData}
-        inPlace={inPlace}
-        onCancelAction={onCancelAction}
-        onCompletedAction={onCompletedAction}
-      />
-    );
-  }, [
-    inPlace,
-    mode,
-    onCancelAction,
-    onCompletedAction,
-    recurringFormQuery.data,
-    recurringFormQuery.error,
-    recurringFormQuery.isLoading,
-    recurringFormQuery.refetch,
-    sheetId,
-  ]);
-
-  if (!asDialog) {
-    return content;
-  }
-
   if (!open) {
     return null;
   }
@@ -196,7 +196,13 @@ export function RecurringFormDialog({
             {mode === "edit" ? "Edit Recurring" : "Add Recurring"}
           </DialogTitle>
         </DialogHeader>
-        {content}
+        <RecurringFormDialogBody
+          sheetId={sheetId}
+          mode={mode}
+          query={recurringFormQuery}
+          onCancelAction={onCancelAction}
+          onCompletedAction={onCompletedAction}
+        />
       </DialogContent>
     </Dialog>
   );

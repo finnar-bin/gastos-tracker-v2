@@ -27,8 +27,6 @@ export async function updateCategory(
   const type = formData.get("type") as "income" | "expense";
   const budgetValue = formData.get("budget");
   const defaultAmountValue = formData.get("defaultAmount");
-  const returnType = formData.get("returnType") as string | null;
-  const inPlace = formData.get("inPlace") === "1";
   const dueDate = formData.get("dueDate")
     ? (formData.get("dueDate") as string)
     : null;
@@ -101,15 +99,7 @@ export async function updateCategory(
     return { error: "Failed to save category. Please review the form and try again." };
   }
 
-  if (inPlace) {
-    return { success: "Category updated." };
-  }
-
-  return {
-    redirectTo: `/sheet/${sheetId}/settings/category?type=${
-      returnType === "income" ? "income" : type
-    }`,
-  };
+  return { success: "Category updated." };
 }
 
 export async function deleteCategory(
@@ -126,8 +116,6 @@ export async function deleteCategory(
 
   const categoryId = formData.get("categoryId") as string;
   const sheetId = formData.get("sheetId") as string;
-  const returnType = formData.get("returnType") as string | null;
-  const inPlace = formData.get("inPlace") === "1";
   const fieldErrors: FormActionResult["fieldErrors"] = {};
 
   if (!categoryId) fieldErrors.categoryId = "Invalid category.";
@@ -152,13 +140,5 @@ export async function deleteCategory(
     return { error: "Failed to delete category. Please try again." };
   }
 
-  if (inPlace) {
-    return { success: "Category deleted." };
-  }
-
-  return {
-    redirectTo: `/sheet/${sheetId}/settings/category?type=${
-      returnType === "income" ? "income" : "expense"
-    }`,
-  };
+  return { success: "Category deleted." };
 }
