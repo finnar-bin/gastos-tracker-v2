@@ -3,6 +3,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { BackgroundSyncIndicator } from "@/components/background-sync-indicator";
 import { TransactionCard } from "@/components/transaction-card";
 import { createClient } from "@/lib/supabase/client";
 import { fetchHistoryFeed } from "@/lib/history-feed";
@@ -96,9 +97,13 @@ export function HistoryContent({
   }
   const returnTo = `/sheet/${sheetId}/history?${returnParams.toString()}`;
   const currency = currencyQuery.data ?? "USD";
+  const isRefreshing =
+    Boolean(historyQuery.data) &&
+    (historyQuery.isFetching || categoriesQuery.isFetching || currencyQuery.isFetching);
 
   return (
     <>
+      <BackgroundSyncIndicator active={isRefreshing} />
       <HistoryFilter
         month={selectedMonth}
         year={selectedYear}
@@ -138,9 +143,6 @@ export function HistoryContent({
           </p>
         ) : (
           <>
-            {historyQuery.isFetching ? (
-              <p className="text-xs text-muted-foreground">Updating results...</p>
-            ) : null}
             {historyQuery.data?.map((tx) => (
               <TransactionCard
                 key={tx.id}

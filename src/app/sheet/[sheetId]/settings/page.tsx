@@ -2,16 +2,12 @@ import { execSync } from "node:child_process";
 import { requireSheetAccess } from "@/lib/auth/sheets";
 import {
   Settings,
-  PlusCircle,
   // Key,
-  Repeat,
-  Users,
-  SlidersHorizontal,
-  WalletCards,
 } from "lucide-react";
-import Link from "next/link";
 import { Header } from "@/components/Header";
+import { SheetContentShell } from "@/components/sheet-content-shell";
 import packageJson from "../../../../../package.json";
+import { SettingsLinks } from "./settings-links";
 
 function getGitHash() {
   const commitSha =
@@ -47,7 +43,7 @@ export default async function SettingsPage({
       : `https://github.com/finnar-bin/gastos-tracker-v2/commit/${gitHash}`;
 
   return (
-    <div className="container max-w-md mx-auto p-4 space-y-6">
+    <SheetContentShell>
       <Header
         title="Settings"
         sheetId={sheetId}
@@ -60,43 +56,7 @@ export default async function SettingsPage({
           <h2 className="text-lg font-semibold border-b pb-2">
             Sheet Settings
           </h2>
-          <div className="flex flex-col space-y-3">
-            <Link
-              href={`/sheet/${sheetId}/settings/general`}
-              className="group flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
-            >
-              <SlidersHorizontal className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              General Settings
-            </Link>
-            <Link
-              href={`/sheet/${sheetId}/settings/category`}
-              className="group flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
-            >
-              <PlusCircle className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              Categories
-            </Link>
-            <Link
-              href={`/sheet/${sheetId}/settings/recurring`}
-              className="group flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
-            >
-              <Repeat className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              Recurring Transactions
-            </Link>
-            <Link
-              href={`/sheet/${sheetId}/settings/payment-types`}
-              className="group flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
-            >
-              <WalletCards className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              Payment Types
-            </Link>
-            <Link
-              href={`/sheet/${sheetId}/settings/users`}
-              className="group flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
-            >
-              <Users className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              Manage Users
-            </Link>
-          </div>
+          <SettingsLinks sheetId={sheetId} />
         </section>
 
         {/* TODO: Implement this in the future */}
@@ -126,6 +86,6 @@ export default async function SettingsPage({
           Git hash: {gitHash}
         </a>
       </div>
-    </div>
+    </SheetContentShell>
   );
 }

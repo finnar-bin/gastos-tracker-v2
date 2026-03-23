@@ -2,6 +2,7 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
+import { BackgroundSyncIndicator } from "@/components/background-sync-indicator";
 import { Button } from "@/components/ui/button";
 import { TransactionCard } from "@/components/transaction-card";
 import { fetchCategoryTransactions } from "@/lib/category-transactions";
@@ -99,12 +100,13 @@ export function CategoryTransactionsContent({
 
   const transactions = categoryTransactionsQuery.data ?? [];
   const currency = currencyQuery.data ?? "USD";
+  const isRefreshing =
+    Boolean(categoryTransactionsQuery.data) &&
+    (categoryTransactionsQuery.isFetching || currencyQuery.isFetching);
 
   return (
     <div className="space-y-3">
-      {categoryTransactionsQuery.isFetching ? (
-        <p className="text-xs text-muted-foreground">Updating results...</p>
-      ) : null}
+      <BackgroundSyncIndicator active={isRefreshing} />
       {transactions.length === 0 ? (
         <p className="text-center text-muted-foreground py-12">
           No transactions found for this category in this period.

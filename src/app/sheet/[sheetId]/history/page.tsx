@@ -1,6 +1,7 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
 import { History } from "lucide-react";
 import { Header } from "@/components/Header";
+import { SheetContentShell } from "@/components/sheet-content-shell";
 import { HistoryContent } from "./history-content";
 
 export default async function HistoryPage({
@@ -12,7 +13,7 @@ export default async function HistoryPage({
   const { permissions, sheet } = await requireSheetAccess(sheetId);
 
   return (
-    <div className="container max-w-md mx-auto p-4 space-y-6 min-h-screen relative">
+    <SheetContentShell className="min-h-screen relative">
       <Header
         title="History"
         sheetId={sheetId}
@@ -22,6 +23,6 @@ export default async function HistoryPage({
       />
 
       <HistoryContent sheetId={sheetId} canEditTransaction={permissions.canEditTransaction} />
-    </div>
+    </SheetContentShell>
   );
 }

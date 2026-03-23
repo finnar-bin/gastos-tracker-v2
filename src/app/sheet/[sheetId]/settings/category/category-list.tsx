@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Calendar, LayoutGrid, TrendingDown, TrendingUp } from "lucide-react";
@@ -8,6 +8,7 @@ import { createElement } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TabHeader } from "@/components/tab-header";
+import { BackgroundSyncIndicator } from "@/components/background-sync-indicator";
 import { FormattedAmount } from "@/components/formatted-amount";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { queryKeys } from "@/lib/query-keys";
@@ -89,6 +90,7 @@ export function CategoryList({
     searchParams.get("type") === "income" ? "income" : "expense";
   const categoriesQuery = useQuery({
     queryKey: queryKeys.categories(sheetId, selectedType),
+    placeholderData: keepPreviousData,
     queryFn: () => fetchCategories(sheetId, selectedType),
   });
   const currencyQuery = useQuery({
@@ -102,7 +104,10 @@ export function CategoryList({
     router.push(`/sheet/${sheetId}/settings/category?${params.toString()}`);
   };
 
-  if (categoriesQuery.isLoading || currencyQuery.isLoading) {
+  if (
+    (categoriesQuery.isLoading && !categoriesQuery.data) ||
+    (currencyQuery.isLoading && !currencyQuery.data)
+  ) {
     return (
       <div className="space-y-4">
         <TabHeader
@@ -152,6 +157,7 @@ export function CategoryList({
 
   const categoryList = categoriesQuery.data ?? [];
   const sheetCurrency = currencyQuery.data ?? "USD";
+  const isRefreshing = categoriesQuery.isFetching || currencyQuery.isFetching;
 
   if (categoryList.length === 0) {
     return (
@@ -184,7 +190,8 @@ export function CategoryList({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="relative space-y-4">
+      <BackgroundSyncIndicator active={isRefreshing} />
       <TabHeader
         value={selectedType}
         onChangeAction={(value) =>

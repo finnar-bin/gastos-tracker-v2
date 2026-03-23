@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Calendar, CreditCard, LayoutGrid, Repeat } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BackgroundSyncIndicator } from "@/components/background-sync-indicator";
 import { FormattedAmount } from "@/components/formatted-amount";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { queryKeys } from "@/lib/query-keys";
@@ -30,7 +31,10 @@ export function RecurringList({
   });
   const currency = currencyQuery.data ?? "USD";
 
-  if (recurringQuery.isLoading || currencyQuery.isLoading) {
+  if (
+    (recurringQuery.isLoading && !recurringQuery.data) ||
+    (currencyQuery.isLoading && !currencyQuery.data)
+  ) {
     return (
       <div className="space-y-4">
         {Array.from({ length: 4 }, (_, idx) => (
@@ -61,6 +65,7 @@ export function RecurringList({
   }
 
   const recurringList = recurringQuery.data ?? [];
+  const isRefreshing = recurringQuery.isFetching || currencyQuery.isFetching;
 
   if (recurringList.length === 0) {
     return (
@@ -82,7 +87,8 @@ export function RecurringList({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="relative space-y-4">
+      <BackgroundSyncIndicator active={isRefreshing} />
       {recurringList.map((rt) => {
         const Icon = getLucideIcon(rt.categoryIcon) || LayoutGrid;
         const isExpense = rt.type === "expense";

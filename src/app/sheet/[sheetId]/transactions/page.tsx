@@ -1,6 +1,7 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
 import { LayoutList } from "lucide-react";
 import { Header } from "@/components/Header";
+import { SheetContentShell } from "@/components/sheet-content-shell";
 import { TransactionsContent } from "./transactions-content";
 
 export default async function YearOverviewPage({
@@ -12,7 +13,7 @@ export default async function YearOverviewPage({
   const { sheet } = await requireSheetAccess(sheetId);
 
   return (
-    <div className="container max-w-md mx-auto p-4 space-y-6">
+    <SheetContentShell>
       <Header
         title="Transactions"
         sheetId={sheetId}
@@ -22,6 +23,6 @@ export default async function YearOverviewPage({
       />
 
       <TransactionsContent sheetId={sheetId} />
-    </div>
+    </SheetContentShell>
   );
 }

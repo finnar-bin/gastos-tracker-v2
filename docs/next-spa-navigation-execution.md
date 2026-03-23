@@ -23,6 +23,9 @@ Assume the repo already contains the completed protected read-model work:
 - client-owned protected list reads
 - graceful validation for major protected forms
 - graceful validation for login and signup
+- latest migration set through `drizzle/0028_drop_duplicate_sheet_users_select_member_policy.sql`
+- restored member-read RLS policies for client-safe tables (`drizzle/0026_restore_member_read_policies.sql`)
+- `profiles` member-readable policy for shared-sheet users (`drizzle/0027_profiles_select_for_sheet_members.sql`)
 
 Do not spend time redoing that work unless a later step explicitly requires adjustment.
 
@@ -91,7 +94,7 @@ Assume these are already in place and should now be used as the foundation:
 
 - stable query keys in `src/lib/query-keys.ts`
 - React Query cache ownership for protected reads
-- read-model helpers under `src/lib`
+- read-model helpers under `src/lib` backed by `dashboard_summary`, `history_feed`, `transaction_overview`, and `category_transactions`
 - client-owned dashboard/history/transactions/recurring/users reads
 
 The next work should build on that cache layer rather than bypass it.

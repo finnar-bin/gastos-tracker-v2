@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CreditCard } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BackgroundSyncIndicator } from "@/components/background-sync-indicator";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { queryKeys } from "@/lib/query-keys";
 import { createClient } from "@/lib/supabase/client";
@@ -46,7 +47,7 @@ export function PaymentTypeList({
     queryFn: () => fetchPaymentTypes(sheetId),
   });
 
-  if (paymentTypesQuery.isLoading) {
+  if (paymentTypesQuery.isLoading && !paymentTypesQuery.data) {
     return (
       <div className="space-y-4">
         {Array.from({ length: 3 }, (_, idx) => (
@@ -76,6 +77,7 @@ export function PaymentTypeList({
   }
 
   const paymentTypeList = paymentTypesQuery.data ?? [];
+  const isRefreshing = paymentTypesQuery.isFetching;
 
   if (paymentTypeList.length === 0) {
     return (
@@ -97,7 +99,8 @@ export function PaymentTypeList({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="relative space-y-4">
+      <BackgroundSyncIndicator active={isRefreshing} />
       {paymentTypeList.map((paymentType) => {
         const Icon = getLucideIcon(paymentType.icon) || CreditCard;
 

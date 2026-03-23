@@ -6,6 +6,7 @@ import { Home, LayoutList, PlusCircle, History, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSheetPermissions } from "@/hooks/use-sheet-permissions";
 import { type SheetRole } from "@/lib/auth/sheet-permissions";
+import { useSheetNavigationPrefetch } from "@/components/use-sheet-navigation-prefetch";
 
 interface BottomBarProps {
   sheetId: string;
@@ -15,23 +16,30 @@ interface BottomBarProps {
 export function BottomBar({ sheetId, role }: BottomBarProps) {
   const pathname = usePathname();
   const permissions = useSheetPermissions(role);
+  const {
+    routes,
+    prefetchNavigationTargetForTouch,
+    prefetchRouteForTouch,
+  } = useSheetNavigationPrefetch(sheetId);
 
   const navItems = [
     {
       name: "Home",
-      href: `/sheet/${sheetId}`,
+      href: routes.dashboard,
+      target: "dashboard" as const,
       icon: Home,
     },
     {
       name: "Transactions",
-      href: `/sheet/${sheetId}/transactions`,
+      href: routes.transactions,
+      target: "transactions" as const,
       icon: LayoutList,
     },
     ...(permissions.canAddTransaction
       ? [
           {
             name: "Add",
-            href: `/sheet/${sheetId}/transactions/add`,
+            href: routes.addTransaction,
             icon: PlusCircle,
             isAction: true,
           },
@@ -39,12 +47,14 @@ export function BottomBar({ sheetId, role }: BottomBarProps) {
       : []),
     {
       name: "History",
-      href: `/sheet/${sheetId}/history`,
+      href: routes.history,
+      target: "history" as const,
       icon: History,
     },
     {
       name: "Settings",
-      href: `/sheet/${sheetId}/settings`,
+      href: routes.settings,
+      target: "settings" as const,
       icon: Settings,
     },
   ];
@@ -67,6 +77,7 @@ export function BottomBar({ sheetId, role }: BottomBarProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                onTouchStart={() => prefetchRouteForTouch(item.href)}
                 className="relative -top-8 flex flex-col items-center justify-center gap-1 group w-16 h-16 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
               >
                 <item.icon className="h-7 w-7" />
@@ -78,6 +89,11 @@ export function BottomBar({ sheetId, role }: BottomBarProps) {
             <Link
               key={item.href}
               href={item.href}
+              onTouchStart={() =>
+                "target" in item && item.target
+                  ? prefetchNavigationTargetForTouch(item.target)
+                  : prefetchRouteForTouch(item.href)
+              }
               className={cn(
                 "flex flex-col items-center justify-center gap-1 w-14 h-full",
                 finalActive
