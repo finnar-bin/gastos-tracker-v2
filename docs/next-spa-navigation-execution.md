@@ -27,6 +27,8 @@ Implemented baseline for completed phases:
 - route/query prefetching for high-traffic navigation and form intents
 - dialog-first add/edit flows for transactions and settings
 - settings add/edit routes removed by design (dialog-only for those flows)
+- transaction category detail route now uses `transactions/[categoryId]` naming
+- legacy route-era module folders were flattened into feature-level `actions.ts` + `*-form.tsx` files
 
 ## Baseline Assumption
 
@@ -349,7 +351,7 @@ These files are the likely starting points.
 - transaction form dialogs
 - recurring form dialogs
 - settings lists
-- category transaction detail route
+- category transaction detail route (`src/app/sheet/[sheetId]/transactions/[categoryId]/page.tsx`)
 
 ## Non-Goals For This Phase
 
@@ -379,7 +381,7 @@ For the remaining Phase 7 work, verify these manually:
 - mobile bottom bar navigation
 - desktop sidebar navigation
 - browser back/forward across sibling routes
-- direct deep link into remaining route-based pages (history, transactions detail/category detail, settings sections)
+- direct deep link into remaining route-based pages (history, transactions category-detail route, settings sections)
 - loading behavior on warm navigation vs hard refresh
 - add/edit/delete after any shell or modal change
 
