@@ -14,6 +14,20 @@ The goal is not more database work. The goal is to make protected navigation fee
 
 Use this file as the source of truth for that phase.
 
+## Current Status
+
+Phases 1 through 6 are complete.
+
+Remaining implementation scope is Phase 7 (UX polish and continuity), plus the manual QA checklist in this document.
+
+Implemented baseline for completed phases:
+
+- persistent inner content shell for sheet pages
+- softened route-level loading in protected flows
+- route/query prefetching for high-traffic navigation and form intents
+- dialog-first add/edit flows for transactions and settings
+- settings add/edit routes removed by design (dialog-only for those flows)
+
 ## Baseline Assumption
 
 Assume the repo already contains the completed protected read-model work:
@@ -38,11 +52,11 @@ Do not spend time redoing that work unless a later step explicitly requires adju
 - Follow `AGENTS.md`.
 - Do not replace the existing `/sheet/[sheetId]/layout.tsx` shell with a brand-new route group unless there is a clear, measurable payoff.
 
-## Problem Statement
+## Historical Problem Statement (Completed Phases 1-6)
 
-The app is already more client-led than before, but it still does not feel like the Vercel dashboard.
+The app was already more client-led than before, but it still did not feel like the Vercel dashboard.
 
-Current user-visible issues:
+Previous user-visible issues:
 
 - sibling protected navigation still looks like separate pages
 - route-level loading files show broad skeletons that replace the main content area
@@ -51,9 +65,9 @@ Current user-visible issues:
 - route/query prefetching is minimal
 - mutations often still feel redirect-driven instead of in-place
 
-The outer shell already persists. The missing layer is a persistent inner content shell and a softer navigation model inside it.
+The outer shell already persisted. The missing layer was a persistent inner content shell and a softer navigation model inside it.
 
-## Current Repo Snapshot
+## Historical Repo Snapshot (Before Phases 1-6)
 
 ### Persistent outer shell already exists
 
@@ -66,7 +80,7 @@ The outer shell already persists. The missing layer is a persistent inner conten
 
 This is good. Keep it.
 
-### What still feels page-based
+### What previously felt page-based (resolved)
 
 The sibling routes under the sheet shell still render their own page containers and headers:
 
@@ -75,9 +89,9 @@ The sibling routes under the sheet shell still render their own page containers 
 - `src/app/sheet/[sheetId]/transactions/page.tsx`
 - comparable settings/detail pages under the same shell
 
-These wrappers still create the feeling that the whole content area is a new page.
+These wrappers created the feeling that the whole content area was a new page.
 
-### Current loading boundaries are too broad
+### Previous loading boundaries were too broad (resolved)
 
 These files currently render full-page skeleton states:
 
@@ -86,7 +100,7 @@ These files currently render full-page skeleton states:
 - `src/app/sheet/[sheetId]/transactions/loading.tsx`
 - `src/app/sheet/[sheetId]/settings/loading.tsx`
 
-These are useful for cold entry, but they are too aggressive for common sibling navigation.
+These were useful for cold entry, but too aggressive for common sibling navigation.
 
 ### Current data layer is good enough for this phase
 
@@ -277,6 +291,30 @@ Success criteria:
 
 - common add/edit/delete operations update the current view without navigation shock
 
+### Phase 7: UX polish and continuity (remaining)
+
+This is the only remaining implementation phase for this document.
+
+Target:
+
+- remove first-open dialog blank states where cached data already exists
+- make high-frequency form mutations feel immediate with optimistic or near-optimistic cache updates
+- preserve list scroll and filter context more consistently after dialogs close
+- keep pending feedback subtle and non-layout-shifting
+
+Expected implementation direction:
+
+- use cache-first initial data for dialog forms, then background refetch
+- patch TanStack Query caches on success paths before/alongside invalidation
+- restore scroll position for history/transactions/settings lists on return flows
+- standardize inline loading and background sync indicators across list/detail screens
+
+Success criteria:
+
+- first-open edit dialogs feel instant more often
+- add/edit/delete feedback feels immediate without abrupt layout changes
+- returning to high-traffic lists feels stateful (filters + scroll preserved)
+
 ## Concrete File Targets
 
 These files are the likely starting points.
@@ -308,8 +346,8 @@ These files are the likely starting points.
 
 ### High-traffic flows
 
-- transaction forms and loaders
-- recurring forms and loaders
+- transaction form dialogs
+- recurring form dialogs
 - settings lists
 - category transaction detail route
 
@@ -327,7 +365,7 @@ Do not spend this phase on:
 ## Quality Rules
 
 - preserve existing permissions and access checks
-- preserve direct deep-link behavior for routes
+- preserve direct deep-link behavior for remaining non-dialog routes
 - preserve browser back/forward correctness
 - do not regress mobile navigation
 - avoid introducing double-fetch or duplicate prefetch loops
@@ -335,13 +373,13 @@ Do not spend this phase on:
 
 ## Verification Checklist
 
-At the end of each phase, verify these manually:
+For the remaining Phase 7 work, verify these manually:
 
 - dashboard -> history -> transactions -> settings navigation
 - mobile bottom bar navigation
 - desktop sidebar navigation
 - browser back/forward across sibling routes
-- direct deep link into history/transactions/detail/edit routes
+- direct deep link into remaining route-based pages (history, transactions detail/category detail, settings sections)
 - loading behavior on warm navigation vs hard refresh
 - add/edit/delete after any shell or modal change
 
@@ -353,18 +391,18 @@ Also run:
 
 If handing this document back to Codex, start with this exact scope:
 
-1. Add a persistent inner content shell for sheet routes.
-2. Reduce broad route-level loading flashes for dashboard, history, and transactions.
-3. Add route/query prefetching to `DesktopNav` and `BottomBar`.
+1. Remove first-open dialog blank states by reading cache-first initial data for edit dialogs, then background refetch.
+2. Add optimistic or near-optimistic cache updates for high-frequency add/edit/delete flows (transactions, categories, payment types, recurring).
+3. Preserve list continuity (filters + scroll) after dialog close/submit in history, transactions, and settings lists.
 
-Do not start with modal routes first.
+Do not re-open Phases 1-6 unless required for regressions.
 
 ## Definition Of Done For This Document
 
-This navigation phase is successful when:
+This document is fully complete when:
 
 - sibling protected navigation no longer feels like a full page reload
 - the shell and inner content frame stay visually stable
 - loading feedback becomes local and subtle
 - common route transitions are often warm due to prefetching
-- at least one major detail/edit flow is proven in-place without harming deep linking
+- Phase 7 continuity goals are complete and the manual verification checklist passes
