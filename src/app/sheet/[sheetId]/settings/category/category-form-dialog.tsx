@@ -1,0 +1,166 @@
+"use client";
+
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { LayoutGrid } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { queryKeys } from "@/lib/query-keys";
+import { createClient } from "@/lib/supabase/client";
+import CategoryForm, { type CategoryFormData } from "./category-form";
+
+type CategoryRow = {
+  id: string;
+  name: string;
+  icon: string;
+  type: "income" | "expense";
+  budget: string | null;
+  default_amount: string | null;
+  due_date: string | null;
+  due_reminder_frequency: "specific_date" | "daily" | "weekly" | "monthly" | null;
+};
+
+const supabase = createClient();
+
+type CategoryFormDialogBodyProps = {
+  sheetId: string;
+  mode: "add" | "edit";
+  initialType: "income" | "expense";
+  query: UseQueryResult<CategoryRow | null>;
+  onCancelAction?: () => void;
+  onCompletedAction?: () => void;
+};
+
+function CategoryFormDialogBody({
+  sheetId,
+  mode,
+  initialType,
+  query,
+  onCancelAction,
+  onCompletedAction,
+}: CategoryFormDialogBodyProps) {
+  if (mode === "add") {
+    return (
+      <CategoryForm
+        sheetId={sheetId}
+        mode="add"
+        initialType={initialType}
+        onCancelAction={onCancelAction}
+        onCompletedAction={onCompletedAction}
+      />
+    );
+  }
+
+  if (query.isLoading) {
+    return <div className="h-80 rounded-xl bg-muted/40 animate-pulse" />;
+  }
+
+  if (query.error) {
+    return (
+      <div className="rounded-xl border border-dashed p-6 text-center">
+        <p className="text-sm text-muted-foreground">Failed to load category.</p>
+        <Button variant="outline" className="mt-4" onClick={() => void query.refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!query.data) {
+    return (
+      <div className="rounded-xl border border-dashed p-6 text-center">
+        <p className="text-sm text-muted-foreground">Category not found.</p>
+      </div>
+    );
+  }
+
+  const initialData: CategoryFormData = {
+    id: query.data.id,
+    name: query.data.name,
+    icon: query.data.icon,
+    type: query.data.type,
+    budget: query.data.budget,
+    defaultAmount: query.data.default_amount,
+    dueDate: query.data.due_date,
+    dueReminderFrequency: query.data.due_reminder_frequency,
+  };
+
+  return (
+    <CategoryForm
+      sheetId={sheetId}
+      mode="edit"
+      initialData={initialData}
+      onCancelAction={onCancelAction}
+      onCompletedAction={onCompletedAction}
+    />
+  );
+}
+
+export function CategoryFormDialog({
+  sheetId,
+  mode = "edit",
+  categoryId,
+  initialType = "expense",
+  open = false,
+  onOpenChangeAction,
+  onCancelAction,
+  onCompletedAction,
+}: {
+  sheetId: string;
+  mode?: "add" | "edit";
+  categoryId?: string;
+  initialType?: "income" | "expense";
+  open?: boolean;
+  onOpenChangeAction?: (open: boolean) => void;
+  onCancelAction?: () => void;
+  onCompletedAction?: () => void;
+}) {
+  const enabled = mode === "edit" && Boolean(categoryId);
+  const categoryQuery = useQuery({
+    queryKey: queryKeys.categoryForm(sheetId, categoryId ?? "new"),
+    enabled: open && enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name, icon, type, budget, default_amount, due_date, due_reminder_frequency")
+        .eq("sheet_id", sheetId)
+        .eq("id", categoryId!)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as CategoryRow | null;
+    },
+  });
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChangeAction}>
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto bg-card"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <LayoutGrid className="h-5 w-5 text-primary" />
+            {mode === "edit" ? "Edit Category" : "Add Category"}
+          </DialogTitle>
+        </DialogHeader>
+        <CategoryFormDialogBody
+          sheetId={sheetId}
+          mode={mode}
+          initialType={initialType}
+          query={categoryQuery}
+          onCancelAction={onCancelAction}
+          onCompletedAction={onCompletedAction}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}

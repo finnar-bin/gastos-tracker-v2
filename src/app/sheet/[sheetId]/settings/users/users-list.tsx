@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Mail, Shield } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BackgroundSyncIndicator } from "@/components/background-sync-indicator";
 import { UserAvatar } from "@/components/user-avatar";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchSheetMemberDirectory } from "@/lib/sheet-member-directory";
@@ -69,7 +70,7 @@ export function UsersList({
     },
   });
 
-  if (usersQuery.isLoading) {
+  if (usersQuery.isLoading && !usersQuery.data) {
     return (
       <div className="space-y-4">
         {Array.from({ length: 5 }, (_, idx) => (
@@ -96,9 +97,11 @@ export function UsersList({
 
   const members = usersQuery.data?.members ?? [];
   const pendingInvites = usersQuery.data?.pendingInvites ?? [];
+  const isRefreshing = usersQuery.isFetching;
 
   return (
-    <>
+    <div className="relative space-y-4">
+      <BackgroundSyncIndicator active={isRefreshing} />
       {pendingInvites.length > 0 ? (
         <div className="space-y-2">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -183,6 +186,6 @@ export function UsersList({
           ))
         )}
       </div>
-    </>
+    </div>
   );
 }

@@ -129,7 +129,6 @@ export function GeneralSettingsForm({
               name="name"
               defaultValue={currentName}
               placeholder="e.g. Personal Budget"
-              required
               disabled={!canEditSheetSettings}
             />
           </div>

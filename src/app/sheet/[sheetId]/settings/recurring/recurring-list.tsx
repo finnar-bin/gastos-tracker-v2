@@ -1,36 +1,93 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Calendar, CreditCard, LayoutGrid, Repeat } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BackgroundSyncIndicator } from "@/components/background-sync-indicator";
 import { FormattedAmount } from "@/components/formatted-amount";
+import { RecurringFormDialog } from "@/app/sheet/[sheetId]/settings/recurring/recurring-form-dialog";
+import { usePrefetchGuard } from "@/components/use-prefetch-guard";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchRecurringOverview } from "@/lib/recurring-overview";
 import { fetchSheetCurrency } from "@/lib/sheet-currency";
+import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
 
 export function RecurringList({
   sheetId,
   canAddRecurringTransaction,
   canEditRecurringTransaction,
+  addDialogOpen: controlledAddDialogOpen,
+  onAddDialogOpenChangeAction,
 }: {
   sheetId: string;
   canAddRecurringTransaction: boolean;
   canEditRecurringTransaction: boolean;
+  addDialogOpen?: boolean;
+  onAddDialogOpenChangeAction?: (open: boolean) => void;
 }) {
+  const queryClient = useQueryClient();
+  const { shouldPrefetch } = usePrefetchGuard();
+  const [internalAddDialogOpen, setInternalAddDialogOpen] = useState(false);
+  const [editingRecurringId, setEditingRecurringId] = useState<string | null>(null);
+  const addDialogOpen = controlledAddDialogOpen ?? internalAddDialogOpen;
+  const setAddDialogOpen = onAddDialogOpenChangeAction ?? setInternalAddDialogOpen;
   const recurringQuery = useQuery({
     queryKey: queryKeys.recurring(sheetId),
     queryFn: () => fetchRecurringOverview(sheetId),
   });
+  const prefetchRecurringForm = (recurringId: string) => {
+    if (!shouldPrefetch(`recurring-form:${recurringId}`)) {
+      return;
+    }
+
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.recurringForm(sheetId, "edit", recurringId),
+      queryFn: async () => {
+        const [categoriesResult, paymentTypesResult, recurringResult] =
+          await Promise.all([
+            supabase
+              .from("categories")
+              .select("id, name, icon, type, default_amount")
+              .eq("sheet_id", sheetId),
+            supabase
+              .from("payment_types")
+              .select("id, name, icon")
+              .eq("sheet_id", sheetId),
+            supabase
+              .from("recurring_transactions")
+              .select("id, amount, type, description, frequency, day_of_month, category_id, payment_type_id")
+              .eq("sheet_id", sheetId)
+              .eq("id", recurringId)
+              .maybeSingle(),
+          ]);
+
+        if (categoriesResult.error) throw categoriesResult.error;
+        if (paymentTypesResult.error) throw paymentTypesResult.error;
+        if (recurringResult.error) throw recurringResult.error;
+
+        return {
+          categories: categoriesResult.data ?? [],
+          paymentTypes: paymentTypesResult.data ?? [],
+          recurring: recurringResult.data,
+        };
+      },
+    });
+  };
   const currencyQuery = useQuery({
     queryKey: queryKeys.sheetCurrency(sheetId),
     queryFn: () => fetchSheetCurrency(sheetId),
   });
   const currency = currencyQuery.data ?? "USD";
 
-  if (recurringQuery.isLoading || currencyQuery.isLoading) {
+  if (
+    (recurringQuery.isLoading && !recurringQuery.data) ||
+    (currencyQuery.isLoading && !currencyQuery.data)
+  ) {
     return (
       <div className="space-y-4">
         {Array.from({ length: 4 }, (_, idx) => (
@@ -61,28 +118,66 @@ export function RecurringList({
   }
 
   const recurringList = recurringQuery.data ?? [];
+  const isRefreshing = recurringQuery.isFetching || currencyQuery.isFetching;
 
   if (recurringList.length === 0) {
     return (
       <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/30">
+        {addDialogOpen ? (
+          <RecurringFormDialog
+            sheetId={sheetId}
+            mode="add"
+            open={true}
+            onOpenChangeAction={setAddDialogOpen}
+            onCancelAction={() => setAddDialogOpen(false)}
+            onCompletedAction={() => setAddDialogOpen(false)}
+          />
+        ) : null}
         <Repeat className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-20" />
         <p className="text-muted-foreground">No recurring transactions yet.</p>
         {canAddRecurringTransaction ? (
-          <Link
-            href={`/sheet/${sheetId}/settings/recurring/add`}
-            className="mt-4 inline-block"
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => setAddDialogOpen(true)}
           >
-            <Button variant="outline" size="sm">
-              Create your first one
-            </Button>
-          </Link>
+            Create your first one
+          </Button>
         ) : null}
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="relative space-y-4">
+      <BackgroundSyncIndicator active={isRefreshing} />
+      {addDialogOpen ? (
+        <RecurringFormDialog
+          sheetId={sheetId}
+          mode="add"
+          open={true}
+          onOpenChangeAction={setAddDialogOpen}
+          onCancelAction={() => setAddDialogOpen(false)}
+          onCompletedAction={() => setAddDialogOpen(false)}
+        />
+      ) : null}
+      {editingRecurringId ? (
+        <RecurringFormDialog
+          sheetId={sheetId}
+          mode="edit"
+          recurringId={editingRecurringId}
+          open={true}
+          onOpenChangeAction={(open) => {
+            if (!open) {
+              setEditingRecurringId(null);
+            }
+          }}
+          onCancelAction={() => setEditingRecurringId(null)}
+          onCompletedAction={() => setEditingRecurringId(null)}
+        />
+      ) : null}
       {recurringList.map((rt) => {
         const Icon = getLucideIcon(rt.categoryIcon) || LayoutGrid;
         const isExpense = rt.type === "expense";
@@ -137,13 +232,17 @@ export function RecurringList({
         );
 
         return canEditRecurringTransaction ? (
-          <Link
+          <button
             key={rt.id}
-            href={`/sheet/${sheetId}/settings/recurring/${rt.id}/edit`}
-            className="block"
+            type="button"
+            className="block w-full text-left"
+            onMouseEnter={() => prefetchRecurringForm(rt.id)}
+            onFocus={() => prefetchRecurringForm(rt.id)}
+            onTouchStart={() => prefetchRecurringForm(rt.id)}
+            onClick={() => setEditingRecurringId(rt.id)}
           >
             {content}
-          </Link>
+          </button>
         ) : (
           <div key={rt.id}>{content}</div>
         );

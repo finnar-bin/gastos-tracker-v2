@@ -1,11 +1,12 @@
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { AlertTriangle, LayoutGrid } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BackgroundSyncIndicator } from "@/components/background-sync-indicator";
 import {
   Tooltip,
   TooltipContent,
@@ -16,7 +17,9 @@ import { FormattedAmount } from "@/components/formatted-amount";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchSheetCurrency } from "@/lib/sheet-currency";
+import { fetchCategoryTransactions } from "@/lib/category-transactions";
 import { fetchTransactionOverview } from "@/lib/transaction-overview";
+import { usePrefetchGuard } from "@/components/use-prefetch-guard";
 import { TransactionsFilter } from "./filter";
 
 function getBudgetStatus(totalAmount: string, budget: string | null) {
@@ -65,6 +68,9 @@ function getBudgetStatus(totalAmount: string, budget: string | null) {
 }
 
 export function TransactionsContent({ sheetId }: { sheetId: string }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { shouldPrefetch } = usePrefetchGuard();
   const searchParams = useSearchParams();
   const now = new Date();
   const parsedYear = Number.parseInt(searchParams.get("year") ?? "", 10);
@@ -100,9 +106,38 @@ export function TransactionsContent({ sheetId }: { sheetId: string }) {
     queryFn: () => fetchSheetCurrency(sheetId),
   });
   const currency = currencyQuery.data ?? "USD";
+  const isRefreshing =
+    Boolean(overviewQuery.data) && (overviewQuery.isFetching || currencyQuery.isFetching);
+  const prefetchCategoryDetails = (categoryId: string) => {
+    const detailUrl = `/sheet/${sheetId}/transactions/${categoryId}?month=${selectedMonth}&year=${selectedYear}&type=${selectedType}`;
+    void router.prefetch(detailUrl);
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.categoryTransactions(sheetId, categoryId, {
+        year: selectedYear,
+        month: selectedMonth,
+        type: selectedType,
+      }),
+      queryFn: () =>
+        fetchCategoryTransactions({
+          sheetId,
+          categoryId,
+          year: selectedYear,
+          month: selectedMonth,
+        }),
+    });
+  };
+
+  const prefetchCategoryDetailsForTouch = (categoryId: string) => {
+    if (!shouldPrefetch(`tx-category:${categoryId}:${selectedYear}:${selectedMonth}:${selectedType}`)) {
+      return;
+    }
+
+    prefetchCategoryDetails(categoryId);
+  };
 
   return (
     <>
+      <BackgroundSyncIndicator active={isRefreshing} />
       <TransactionsFilter
         month={selectedMonth}
         year={selectedYear}
@@ -135,9 +170,6 @@ export function TransactionsContent({ sheetId }: { sheetId: string }) {
           </p>
         ) : (
           <>
-            {overviewQuery.isFetching ? (
-              <p className="text-xs text-muted-foreground">Updating results...</p>
-            ) : null}
             {overviewQuery.data?.map((category) => {
               const Icon = getLucideIcon(category.icon) || LayoutGrid;
               const { amountClassName, budgetLeft, shouldShowWarning } = getBudgetStatus(
@@ -153,6 +185,9 @@ export function TransactionsContent({ sheetId }: { sheetId: string }) {
                 <Link
                   key={category.id}
                   href={`/sheet/${sheetId}/transactions/${category.id}?${params.toString()}`}
+                  onMouseEnter={() => prefetchCategoryDetails(category.id)}
+                  onFocus={() => prefetchCategoryDetails(category.id)}
+                  onTouchStart={() => prefetchCategoryDetailsForTouch(category.id)}
                   className="block"
                 >
                   <Card className="shadow-sm cursor-pointer hover:shadow-md transition-shadow">

@@ -1,13 +1,17 @@
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { BackgroundSyncIndicator } from "@/components/background-sync-indicator";
 import { TransactionCard } from "@/components/transaction-card";
+import { TransactionFormDialog } from "@/app/sheet/[sheetId]/transactions/transaction-form-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { fetchHistoryFeed } from "@/lib/history-feed";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchSheetCurrency } from "@/lib/sheet-currency";
+import { fetchTransactionFormData } from "@/lib/transaction-form-data";
 import { HistoryFilter } from "./filter";
 
 type CategoryRow = {
@@ -26,6 +30,8 @@ export function HistoryContent({
   sheetId: string;
   canEditTransaction: boolean;
 }) {
+  const queryClient = useQueryClient();
+  const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const now = new Date();
   const parsedYear = Number.parseInt(searchParams.get("year") ?? "", 10);
@@ -84,21 +90,57 @@ export function HistoryContent({
     ? availableCategories.filter((category) => category.type === selectedType)
     : availableCategories;
 
-  const returnParams = new URLSearchParams({
-    month: selectedMonth.toString(),
-    year: selectedYear.toString(),
-  });
-  if (selectedType) {
-    returnParams.set("type", selectedType);
-  }
-  if (selectedCategoryId) {
-    returnParams.set("categoryId", selectedCategoryId);
-  }
-  const returnTo = `/sheet/${sheetId}/history?${returnParams.toString()}`;
   const currency = currencyQuery.data ?? "USD";
+  const isRefreshing =
+    Boolean(historyQuery.data) &&
+    (historyQuery.isFetching || categoriesQuery.isFetching || currencyQuery.isFetching);
+  const closeEditDialog = () => setEditingTransactionId(null);
+  const handleMutationCompleted = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["sheet", sheetId, "history"] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard(sheetId) }),
+      queryClient.invalidateQueries({
+        queryKey: ["sheet", sheetId, "transactions-overview"],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["sheet", sheetId, "category-transactions"],
+      }),
+    ]);
+    closeEditDialog();
+  };
+  const prefetchEditTransactionForm = (transactionId: string) => {
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.transactionForm(sheetId, "edit", transactionId, "unknown"),
+      queryFn: () =>
+        fetchTransactionFormData({
+          supabase,
+          sheetId,
+          mode: "edit",
+          transactionId,
+        }),
+    });
+  };
 
   return (
     <>
+      <BackgroundSyncIndicator active={isRefreshing} />
+      {editingTransactionId ? (
+        <TransactionFormDialog
+          sheetId={sheetId}
+          mode="edit"
+          transactionId={editingTransactionId}
+          open={true}
+          onOpenChangeAction={(open) => {
+            if (!open) {
+              closeEditDialog();
+            }
+          }}
+          onCancelAction={closeEditDialog}
+          onCompletedAction={() => {
+            void handleMutationCompleted();
+          }}
+        />
+      ) : null}
       <HistoryFilter
         month={selectedMonth}
         year={selectedYear}
@@ -138,17 +180,14 @@ export function HistoryContent({
           </p>
         ) : (
           <>
-            {historyQuery.isFetching ? (
-              <p className="text-xs text-muted-foreground">Updating results...</p>
-            ) : null}
             {historyQuery.data?.map((tx) => (
               <TransactionCard
                 key={tx.id}
-                sheetId={sheetId}
                 tx={tx}
-                returnTo={returnTo}
                 currency={currency}
                 canEditTransaction={canEditTransaction}
+                onEditIntentAction={() => prefetchEditTransactionForm(tx.id)}
+                onEditAction={() => setEditingTransactionId(tx.id)}
               />
             ))}
           </>

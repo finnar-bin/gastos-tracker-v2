@@ -1,4 +1,5 @@
 import { requireSheetAccess } from "@/lib/auth/sheets";
+import { SheetContentShell } from "@/components/sheet-content-shell";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { DashboardContent } from "./dashboard-content";
@@ -12,7 +13,7 @@ export default async function SheetDashboardPage({
   const { sheet } = await requireSheetAccess(sheetId);
 
   return (
-    <div className="container max-w-md mx-auto p-4 space-y-6">
+    <SheetContentShell>
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">{sheet.name}</h1>
@@ -32,6 +33,6 @@ export default async function SheetDashboardPage({
         </div>
       </header>
       <DashboardContent sheetId={sheetId} />
-    </div>
+    </SheetContentShell>
   );
 }

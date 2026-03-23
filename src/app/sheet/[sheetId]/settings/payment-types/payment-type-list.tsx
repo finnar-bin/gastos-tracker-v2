@@ -1,10 +1,13 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CreditCard } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BackgroundSyncIndicator } from "@/components/background-sync-indicator";
+import { PaymentTypeFormDialog } from "@/app/sheet/[sheetId]/settings/payment-types/payment-type-form-dialog";
+import { usePrefetchGuard } from "@/components/use-prefetch-guard";
 import { getLucideIcon } from "@/lib/lucide-icons";
 import { queryKeys } from "@/lib/query-keys";
 import { createClient } from "@/lib/supabase/client";
@@ -36,17 +39,50 @@ export function PaymentTypeList({
   sheetId,
   canEditPaymentType,
   canAddPaymentType,
+  addDialogOpen: controlledAddDialogOpen,
+  onAddDialogOpenChangeAction,
 }: {
   sheetId: string;
   canEditPaymentType: boolean;
   canAddPaymentType: boolean;
+  addDialogOpen?: boolean;
+  onAddDialogOpenChangeAction?: (open: boolean) => void;
 }) {
+  const queryClient = useQueryClient();
+  const { shouldPrefetch } = usePrefetchGuard();
+  const [internalAddDialogOpen, setInternalAddDialogOpen] = useState(false);
+  const [editingPaymentTypeId, setEditingPaymentTypeId] = useState<string | null>(null);
+  const addDialogOpen = controlledAddDialogOpen ?? internalAddDialogOpen;
+  const setAddDialogOpen = onAddDialogOpenChangeAction ?? setInternalAddDialogOpen;
   const paymentTypesQuery = useQuery({
     queryKey: queryKeys.paymentTypes(sheetId),
     queryFn: () => fetchPaymentTypes(sheetId),
   });
+  const prefetchPaymentTypeForm = (paymentTypeId: string) => {
+    if (!shouldPrefetch(`payment-type-form:${paymentTypeId}`)) {
+      return;
+    }
 
-  if (paymentTypesQuery.isLoading) {
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.paymentTypeForm(sheetId, paymentTypeId),
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from("payment_types")
+          .select("id, name, icon")
+          .eq("sheet_id", sheetId)
+          .eq("id", paymentTypeId)
+          .maybeSingle();
+
+        if (error) {
+          throw error;
+        }
+
+        return data;
+      },
+    });
+  };
+
+  if (paymentTypesQuery.isLoading && !paymentTypesQuery.data) {
     return (
       <div className="space-y-4">
         {Array.from({ length: 3 }, (_, idx) => (
@@ -76,28 +112,66 @@ export function PaymentTypeList({
   }
 
   const paymentTypeList = paymentTypesQuery.data ?? [];
+  const isRefreshing = paymentTypesQuery.isFetching;
 
   if (paymentTypeList.length === 0) {
     return (
       <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/30">
+        {addDialogOpen ? (
+          <PaymentTypeFormDialog
+            sheetId={sheetId}
+            mode="add"
+            open={true}
+            onOpenChangeAction={setAddDialogOpen}
+            onCancelAction={() => setAddDialogOpen(false)}
+            onCompletedAction={() => setAddDialogOpen(false)}
+          />
+        ) : null}
         <CreditCard className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-20" />
         <p className="text-muted-foreground">No payment types yet.</p>
         {canAddPaymentType ? (
-          <Link
-            href={`/sheet/${sheetId}/settings/payment-types/add`}
-            className="mt-4 inline-block"
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => setAddDialogOpen(true)}
           >
-            <Button variant="outline" size="sm">
-              Create your first one
-            </Button>
-          </Link>
+            Create your first one
+          </Button>
         ) : null}
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="relative space-y-4">
+      <BackgroundSyncIndicator active={isRefreshing} />
+      {addDialogOpen ? (
+        <PaymentTypeFormDialog
+          sheetId={sheetId}
+          mode="add"
+          open={true}
+          onOpenChangeAction={setAddDialogOpen}
+          onCancelAction={() => setAddDialogOpen(false)}
+          onCompletedAction={() => setAddDialogOpen(false)}
+        />
+      ) : null}
+      {editingPaymentTypeId ? (
+        <PaymentTypeFormDialog
+          sheetId={sheetId}
+          mode="edit"
+          paymentTypeId={editingPaymentTypeId}
+          open={true}
+          onOpenChangeAction={(open) => {
+            if (!open) {
+              setEditingPaymentTypeId(null);
+            }
+          }}
+          onCancelAction={() => setEditingPaymentTypeId(null)}
+          onCompletedAction={() => setEditingPaymentTypeId(null)}
+        />
+      ) : null}
       {paymentTypeList.map((paymentType) => {
         const Icon = getLucideIcon(paymentType.icon) || CreditCard;
 
@@ -120,13 +194,17 @@ export function PaymentTypeList({
         );
 
         return canEditPaymentType ? (
-          <Link
+          <button
             key={paymentType.id}
-            href={`/sheet/${sheetId}/settings/payment-types/${paymentType.id}/edit`}
-            className="block"
+            type="button"
+            className="block w-full text-left"
+            onMouseEnter={() => prefetchPaymentTypeForm(paymentType.id)}
+            onFocus={() => prefetchPaymentTypeForm(paymentType.id)}
+            onTouchStart={() => prefetchPaymentTypeForm(paymentType.id)}
+            onClick={() => setEditingPaymentTypeId(paymentType.id)}
           >
             {content}
-          </Link>
+          </button>
         ) : (
           <div key={paymentType.id}>{content}</div>
         );

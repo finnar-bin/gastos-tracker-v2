@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { CreditCard } from "lucide-react";
 import { SearchableSelect } from "@/components/searchable-select";
 import { getLucideIcon } from "@/lib/lucide-icons";
@@ -36,12 +36,6 @@ export function PaymentTypePicker({
 }: PaymentTypePickerProps) {
   const isControlled = value !== undefined;
   const [internalValue, setInternalValue] = useState(defaultValue ?? "");
-
-  useEffect(() => {
-    if (!isControlled) {
-      setInternalValue(defaultValue ?? "");
-    }
-  }, [defaultValue, isControlled]);
 
   const resolvedValue = isControlled ? value : internalValue;
 

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { sheetInvites, sheetUsers, profiles, sheets } from "@/lib/db/schema";
+import type { FormActionResult } from "@/lib/form-state";
 import {
   buildInviteUrl,
   generateInviteToken,
@@ -18,7 +19,14 @@ import { requireSheetAccess } from "@/lib/auth/sheets";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export async function createSheetInvite(formData: FormData) {
+type InviteActionResult = FormActionResult & {
+  warning?: string;
+  inviteUrl?: string;
+};
+
+export async function createSheetInvite(
+  formData: FormData,
+): Promise<InviteActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,19 +37,31 @@ export async function createSheetInvite(formData: FormData) {
   const sheetId = formData.get("sheetId") as string;
   const invitedEmailRaw = formData.get("email") as string;
   const roleRaw = formData.get("role") as string;
+  const fieldErrors: FormActionResult["fieldErrors"] = {};
 
-  if (!sheetId || !invitedEmailRaw || !roleRaw) {
-    return { error: "Email and role are required." };
+  if (!sheetId) {
+    return { error: "Invalid sheet." };
+  }
+  if (!invitedEmailRaw?.trim()) fieldErrors.email = "Email is required.";
+  if (!roleRaw?.trim()) fieldErrors.role = "Role is required.";
+  if (Object.keys(fieldErrors).length > 0) {
+    return { error: "Please fix the highlighted fields.", fieldErrors };
   }
 
   if (!isValidRole(roleRaw)) {
-    return { error: "Invalid role selected." };
+    return {
+      error: "Please fix the highlighted fields.",
+      fieldErrors: { role: "Invalid role selected." },
+    };
   }
   const role = roleRaw;
 
   const invitedEmail = normalizeEmail(invitedEmailRaw);
   if (!EMAIL_REGEX.test(invitedEmail)) {
-    return { error: "Invalid email format." };
+    return {
+      error: "Please fix the highlighted fields.",
+      fieldErrors: { email: "Invalid email format." },
+    };
   }
 
   const { permissions } = await requireSheetAccess(sheetId);
