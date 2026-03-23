@@ -13,7 +13,7 @@ import { queryKeys } from "@/lib/query-keys";
 import { createClient } from "@/lib/supabase/client";
 import RecurringTransactionForm, {
   type RecurringTransactionData,
-} from "./add/form";
+} from "./recurring-form";
 
 type CategoryRow = {
   id: string;

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { queryKeys } from "@/lib/query-keys";
 import { createClient } from "@/lib/supabase/client";
-import PaymentTypeForm, { type PaymentTypeFormData } from "./add/form";
+import PaymentTypeForm, { type PaymentTypeFormData } from "./payment-type-form";
 
 type PaymentTypeRow = {
   id: string;

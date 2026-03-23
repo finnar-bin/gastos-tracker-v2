@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { queryKeys } from "@/lib/query-keys";
 import { createClient } from "@/lib/supabase/client";
-import CategoryForm, { type CategoryFormData } from "./add/form";
+import CategoryForm, { type CategoryFormData } from "./category-form";
 
 type CategoryRow = {
   id: string;

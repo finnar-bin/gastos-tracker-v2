@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { addRecurringTransaction } from "../add/actions";
+import { addRecurringTransaction } from "./actions";
 import {
   updateRecurringTransaction,
   deleteRecurringTransaction,
-} from "../[recurringId]/edit/actions";
+} from "./actions";
 import { Button } from "@/components/ui/button";
 import { CategoryPicker } from "@/components/category-picker";
 import { LoadingButton } from "@/components/loading-button";

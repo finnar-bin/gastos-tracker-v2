@@ -13,7 +13,7 @@ import {
 import { queryKeys } from "@/lib/query-keys";
 import { createClient } from "@/lib/supabase/client";
 import { fetchTransactionFormData } from "@/lib/transaction-form-data";
-import TransactionForm, { type TransactionData } from "./add/form";
+import TransactionForm, { type TransactionData } from "./transaction-form";
 
 const supabase = createClient();
 

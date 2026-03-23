@@ -11,9 +11,9 @@ import { CategoryTransactionsContent } from "./category-transactions-content";
 export default async function CategoryTransactionsPage({
   params,
 }: {
-  params: Promise<{ sheetId: string; transactionId: string }>;
+  params: Promise<{ sheetId: string; categoryId: string }>;
 }) {
-  const { sheetId, transactionId } = await params;
+  const { sheetId, categoryId } = await params;
   const { permissions, sheet } = await requireSheetAccess(sheetId);
 
   const categoryPromise = db
@@ -25,7 +25,7 @@ export default async function CategoryTransactionsPage({
     })
     .from(categories)
     .where(
-      and(eq(categories.id, transactionId), eq(categories.sheetId, sheetId)),
+      and(eq(categories.id, categoryId), eq(categories.sheetId, sheetId)),
     );
   const [category] = await categoryPromise;
 
@@ -46,7 +46,7 @@ export default async function CategoryTransactionsPage({
 
       <CategoryTransactionsContent
         sheetId={sheetId}
-        categoryId={transactionId}
+        categoryId={categoryId}
         categoryName={category.name}
         categoryIcon={category.icon}
         categoryType={category.type}

@@ -7,7 +7,7 @@ import { addPaymentType } from "./actions";
 import {
   deletePaymentType,
   updatePaymentType,
-} from "../[paymentTypeId]/edit/actions";
+} from "./actions";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/loading-button";
 import { Input } from "@/components/ui/input";
