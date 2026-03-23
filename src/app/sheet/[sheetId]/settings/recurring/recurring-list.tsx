@@ -22,20 +22,20 @@ export function RecurringList({
   canAddRecurringTransaction,
   canEditRecurringTransaction,
   addDialogOpen: controlledAddDialogOpen,
-  onAddDialogOpenChange,
+  onAddDialogOpenChangeAction,
 }: {
   sheetId: string;
   canAddRecurringTransaction: boolean;
   canEditRecurringTransaction: boolean;
   addDialogOpen?: boolean;
-  onAddDialogOpenChange?: (open: boolean) => void;
+  onAddDialogOpenChangeAction?: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
   const { shouldPrefetch } = usePrefetchGuard();
   const [internalAddDialogOpen, setInternalAddDialogOpen] = useState(false);
   const [editingRecurringId, setEditingRecurringId] = useState<string | null>(null);
   const addDialogOpen = controlledAddDialogOpen ?? internalAddDialogOpen;
-  const setAddDialogOpen = onAddDialogOpenChange ?? setInternalAddDialogOpen;
+  const setAddDialogOpen = onAddDialogOpenChangeAction ?? setInternalAddDialogOpen;
   const recurringQuery = useQuery({
     queryKey: queryKeys.recurring(sheetId),
     queryFn: () => fetchRecurringOverview(sheetId),

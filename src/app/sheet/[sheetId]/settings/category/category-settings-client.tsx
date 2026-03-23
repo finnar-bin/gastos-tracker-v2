@@ -46,7 +46,7 @@ export function CategorySettingsClient({
         canAddCategory={canAddCategory}
         canEditCategory={canEditCategory}
         addDialogOpen={addDialogOpen}
-        onAddDialogOpenChange={setAddDialogOpen}
+        onAddDialogOpenChangeAction={setAddDialogOpen}
       />
     </div>
   );

@@ -46,7 +46,7 @@ export function PaymentTypesSettingsClient({
         canAddPaymentType={canAddPaymentType}
         canEditPaymentType={canEditPaymentType}
         addDialogOpen={addDialogOpen}
-        onAddDialogOpenChange={setAddDialogOpen}
+        onAddDialogOpenChangeAction={setAddDialogOpen}
       />
     </div>
   );

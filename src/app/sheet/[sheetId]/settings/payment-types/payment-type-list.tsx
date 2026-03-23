@@ -40,20 +40,20 @@ export function PaymentTypeList({
   canEditPaymentType,
   canAddPaymentType,
   addDialogOpen: controlledAddDialogOpen,
-  onAddDialogOpenChange,
+  onAddDialogOpenChangeAction,
 }: {
   sheetId: string;
   canEditPaymentType: boolean;
   canAddPaymentType: boolean;
   addDialogOpen?: boolean;
-  onAddDialogOpenChange?: (open: boolean) => void;
+  onAddDialogOpenChangeAction?: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
   const { shouldPrefetch } = usePrefetchGuard();
   const [internalAddDialogOpen, setInternalAddDialogOpen] = useState(false);
   const [editingPaymentTypeId, setEditingPaymentTypeId] = useState<string | null>(null);
   const addDialogOpen = controlledAddDialogOpen ?? internalAddDialogOpen;
-  const setAddDialogOpen = onAddDialogOpenChange ?? setInternalAddDialogOpen;
+  const setAddDialogOpen = onAddDialogOpenChangeAction ?? setInternalAddDialogOpen;
   const paymentTypesQuery = useQuery({
     queryKey: queryKeys.paymentTypes(sheetId),
     queryFn: () => fetchPaymentTypes(sheetId),

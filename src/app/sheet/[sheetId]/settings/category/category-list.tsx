@@ -82,13 +82,13 @@ export function CategoryList({
   canEditCategory,
   canAddCategory,
   addDialogOpen: controlledAddDialogOpen,
-  onAddDialogOpenChange,
+  onAddDialogOpenChangeAction,
 }: {
   sheetId: string;
   canEditCategory: boolean;
   canAddCategory: boolean;
   addDialogOpen?: boolean;
-  onAddDialogOpenChange?: (open: boolean) => void;
+  onAddDialogOpenChangeAction?: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
   const { shouldPrefetch } = usePrefetchGuard();
@@ -97,7 +97,7 @@ export function CategoryList({
   const [internalAddDialogOpen, setInternalAddDialogOpen] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const addDialogOpen = controlledAddDialogOpen ?? internalAddDialogOpen;
-  const setAddDialogOpen = onAddDialogOpenChange ?? setInternalAddDialogOpen;
+  const setAddDialogOpen = onAddDialogOpenChangeAction ?? setInternalAddDialogOpen;
   const selectedType =
     searchParams.get("type") === "income" ? "income" : "expense";
   const categoriesQuery = useQuery({

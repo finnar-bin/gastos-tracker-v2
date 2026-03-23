@@ -46,7 +46,7 @@ export function RecurringSettingsClient({
         canAddRecurringTransaction={canAddRecurringTransaction}
         canEditRecurringTransaction={canEditRecurringTransaction}
         addDialogOpen={addDialogOpen}
-        onAddDialogOpenChange={setAddDialogOpen}
+        onAddDialogOpenChangeAction={setAddDialogOpen}
       />
     </div>
   );
